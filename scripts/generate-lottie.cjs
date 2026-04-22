@@ -1,0 +1,218 @@
+const fs = require('fs')
+const path = require('path')
+
+const outDir = path.join(__dirname, '..', 'public', 'animations')
+
+// Success checkmark - circle pops in, checkmark draws
+const success = {
+  v: '5.7.1',
+  fr: 30,
+  ip: 0,
+  op: 36,
+  w: 120,
+  h: 120,
+  nm: 'success',
+  layers: [
+    // Circle layer
+    {
+      ddd: 0, ind: 1, ty: 4, nm: 'circle', sr: 1,
+      ks: {
+        o: { a: 0, k: 100 },
+        r: { a: 0, k: 0 },
+        p: { a: 0, k: [60, 60, 0] },
+        a: { a: 0, k: [0, 0, 0] },
+        s: {
+          a: 1,
+          k: [
+            { i: { x: [0.4], y: [1] }, o: { x: [0.2], y: [0] }, t: 0, s: [0, 0, 100] },
+            { i: { x: [0.4], y: [1] }, o: { x: [0.2], y: [0] }, t: 12, s: [115, 115, 100] },
+            { t: 18, s: [100, 100, 100] },
+          ],
+        },
+      },
+      ao: 0,
+      shapes: [
+        { ty: 'el', d: 1, p: { a: 0, k: [0, 0] }, s: { a: 0, k: [90, 90] }, nm: 'ellipse' },
+        { ty: 'fl', c: { a: 0, k: [0.298, 0.686, 0.314, 1] }, o: { a: 0, k: 100 }, r: 1, nm: 'fill' },
+      ],
+      ip: 0, op: 36, st: 0,
+    },
+    // Checkmark layer
+    {
+      ddd: 0, ind: 2, ty: 4, nm: 'check', sr: 1,
+      ks: {
+        o: { a: 0, k: 100 },
+        r: { a: 0, k: 0 },
+        p: { a: 0, k: [60, 60, 0] },
+        a: { a: 0, k: [0, 0, 0] },
+        s: { a: 0, k: [100, 100, 100] },
+      },
+      ao: 0,
+      shapes: [
+        {
+          ty: 'sh', d: 1, nm: 'check-path',
+          ks: {
+            a: 0,
+            k: {
+              i: [[0, 0], [0, 0], [0, 0]], o: [[0, 0], [0, 0], [0, 0]],
+              v: [[-18, 2], [-5, 16], [20, -14]],
+              c: false,
+            },
+          },
+        },
+        {
+          ty: 'st', c: { a: 0, k: [1, 1, 1, 1] }, o: { a: 0, k: 100 },
+          w: { a: 0, k: 7 }, lc: 2, lj: 2, nm: 'stroke',
+        },
+        {
+          ty: 'tm', s: { a: 0, k: 0 }, e: {
+            a: 1,
+            k: [
+              { i: { x: [0.4] }, o: { x: [0.2] }, t: 10, s: [0] },
+              { t: 24, s: [100] },
+            ],
+          }, o: { a: 0, k: 0 }, m: 1, nm: 'trim',
+        },
+      ],
+      ip: 0, op: 36, st: 0,
+    },
+  ],
+}
+
+// Warning shake - triangle wobbles
+const warning = {
+  v: '5.7.1',
+  fr: 30,
+  ip: 0,
+  op: 30,
+  w: 100,
+  h: 100,
+  nm: 'warning',
+  layers: [
+    {
+      ddd: 0, ind: 1, ty: 4, nm: 'triangle', sr: 1,
+      ks: {
+        o: { a: 0, k: 100 },
+        r: {
+          a: 1,
+          k: [
+            { i: { x: [0.4] }, o: { x: [0.6] }, t: 0, s: [0] },
+            { i: { x: [0.4] }, o: { x: [0.6] }, t: 4, s: [12] },
+            { i: { x: [0.4] }, o: { x: [0.6] }, t: 8, s: [-10] },
+            { i: { x: [0.4] }, o: { x: [0.6] }, t: 12, s: [8] },
+            { i: { x: [0.4] }, o: { x: [0.6] }, t: 16, s: [-6] },
+            { i: { x: [0.4] }, o: { x: [0.6] }, t: 20, s: [4] },
+            { i: { x: [0.4] }, o: { x: [0.6] }, t: 24, s: [-2] },
+            { t: 28, s: [0] },
+          ],
+        },
+        p: { a: 0, k: [50, 50, 0] },
+        a: { a: 0, k: [0, 10, 0] },
+        s: { a: 0, k: [100, 100, 100] },
+      },
+      ao: 0,
+      shapes: [
+        {
+          ty: 'sh', d: 1, nm: 'tri',
+          ks: {
+            a: 0,
+            k: {
+              i: [[0, 0], [0, 0], [0, 0]],
+              o: [[0, 0], [0, 0], [0, 0]],
+              v: [[0, -30], [28, 20], [-28, 20]],
+              c: true,
+            },
+          },
+        },
+        { ty: 'fl', c: { a: 0, k: [0.945, 0.38, 0.38, 1] }, o: { a: 0, k: 100 }, r: 1, nm: 'fill' },
+      ],
+      ip: 0, op: 30, st: 0,
+    },
+    // Exclamation dot
+    {
+      ddd: 0, ind: 2, ty: 4, nm: 'dot', sr: 1,
+      ks: {
+        o: { a: 0, k: 100 },
+        r: { a: 0, k: 0 },
+        p: { a: 0, k: [50, 62, 0] },
+        a: { a: 0, k: [0, 0, 0] },
+        s: { a: 0, k: [100, 100, 100] },
+      },
+      ao: 0,
+      shapes: [
+        { ty: 'el', d: 1, p: { a: 0, k: [0, 0] }, s: { a: 0, k: [8, 8] }, nm: 'dot' },
+        { ty: 'fl', c: { a: 0, k: [1, 1, 1, 1] }, o: { a: 0, k: 100 }, r: 1, nm: 'fill' },
+      ],
+      ip: 0, op: 30, st: 0,
+    },
+  ],
+}
+
+// Empty state - subtle floating wallet
+const empty = {
+  v: '5.7.1',
+  fr: 30,
+  ip: 0,
+  op: 60,
+  w: 200,
+  h: 200,
+  nm: 'empty',
+  layers: [
+    {
+      ddd: 0, ind: 1, ty: 4, nm: 'wallet', sr: 1,
+      ks: {
+        o: { a: 0, k: 30 },
+        r: { a: 0, k: 0 },
+        p: {
+          a: 1,
+          k: [
+            { i: { x: 0.4, y: 1 }, o: { x: 0.2, y: 0 }, t: 0, s: [100, 95, 0] },
+            { i: { x: 0.4, y: 1 }, o: { x: 0.2, y: 0 }, t: 30, s: [100, 85, 0] },
+            { t: 60, s: [100, 95, 0] },
+          ],
+        },
+        a: { a: 0, k: [0, 0, 0] },
+        s: { a: 0, k: [100, 100, 100] },
+      },
+      ao: 0,
+      shapes: [
+        // Wallet body
+        {
+          ty: 'rc', d: 1, p: { a: 0, k: [0, 5] },
+          s: { a: 0, k: [70, 50] }, r: { a: 0, k: 8 }, nm: 'body',
+        },
+        { ty: 'fl', c: { a: 0, k: [0.6, 0.6, 0.6, 1] }, o: { a: 0, k: 100 }, r: 1, nm: 'fill' },
+      ],
+      ip: 0, op: 60, st: 0,
+    },
+    // Coin
+    {
+      ddd: 0, ind: 2, ty: 4, nm: 'coin', sr: 1,
+      ks: {
+        o: { a: 0, k: 30 },
+        r: { a: 0, k: 0 },
+        p: {
+          a: 1,
+          k: [
+            { i: { x: 0.4, y: 1 }, o: { x: 0.2, y: 0 }, t: 0, s: [120, 70, 0] },
+            { i: { x: 0.4, y: 1 }, o: { x: 0.2, y: 0 }, t: 30, s: [120, 60, 0] },
+            { t: 60, s: [120, 70, 0] },
+          ],
+        },
+        a: { a: 0, k: [0, 0, 0] },
+        s: { a: 0, k: [100, 100, 100] },
+      },
+      ao: 0,
+      shapes: [
+        { ty: 'el', d: 1, p: { a: 0, k: [0, 0] }, s: { a: 0, k: [20, 20] }, nm: 'coin' },
+        { ty: 'fl', c: { a: 0, k: [0.85, 0.65, 0.13, 1] }, o: { a: 0, k: 100 }, r: 1, nm: 'fill' },
+      ],
+      ip: 0, op: 60, st: 0,
+    },
+  ],
+}
+
+fs.writeFileSync(path.join(outDir, 'success.json'), JSON.stringify(success))
+fs.writeFileSync(path.join(outDir, 'warning.json'), JSON.stringify(warning))
+fs.writeFileSync(path.join(outDir, 'empty.json'), JSON.stringify(empty))
+console.log('Generated 3 Lottie animations')
