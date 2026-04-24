@@ -2,9 +2,11 @@
 import { ref, computed } from 'vue'
 import type { Transaction } from '@/types'
 import { fenToYuan } from '@/lib/input-parser'
+import { toDateStr } from '@/lib/date-utils'
 
 const props = defineProps<{
   transaction: Transaction
+  animate?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -16,7 +18,8 @@ const amountYuan = computed(() => fenToYuan(props.transaction.amount))
 
 const timeStr = computed(() => {
   const d = new Date(props.transaction.createdAt)
-  return d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+  const hhmm = d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+  return props.transaction.date === toDateStr(new Date()) ? `今天 ${hhmm}` : hhmm
 })
 
 // --- 滑动 ---
@@ -37,6 +40,9 @@ function onTouchStart(e: TouchEvent) {
   // 触摸删除按钮区域时不启动手势
   const target = e.target as HTMLElement
   if (target.closest('[data-delete-area]')) return
+
+  // 阻止 iOS 长按弹出系统菜单
+  target.addEventListener('contextmenu', (ev) => ev.preventDefault(), { once: true })
 
   const t = e.touches[0]
   if (!t) return
@@ -113,7 +119,7 @@ const trans = computed(() =>
 </script>
 
 <template>
-  <div class="mb-1 animate-bubble-in">
+  <div class="mb-1" :class="{ 'animate-bubble-in': animate !== false }">
     <!-- 滑动区域：右对齐，overflow-hidden 裁剪右侧删除按钮 -->
     <div class="flex justify-end overflow-hidden">
       <!-- 并排容器：气泡 + 删除，整体左滑 -->
@@ -171,5 +177,10 @@ const trans = computed(() =>
   from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.animate-bubble-in { animation: bubble-in 0.2s ease-out; }
+.animate-bubble-in {
+  animation: bubble-in 0.2s ease-out;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
 </style>

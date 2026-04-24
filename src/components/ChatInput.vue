@@ -27,9 +27,7 @@ const hint = computed(() => {
   return parseResult.value.hint
 })
 
-const isReady = computed(
-  () => parseResult.value?.ok === true,
-)
+const isReady = computed(() => parseResult.value?.ok === true)
 
 function handleSubmit() {
   if (!parseResult.value?.ok) return
@@ -58,9 +56,25 @@ function onKeydown(e: KeyboardEvent) {
 </script>
 
 <template>
-  <div class="border-t bg-background px-4 pb-[env(safe-area-inset-bottom)] pt-2">
-    <div class="flex items-center gap-2 mb-1 min-h-[20px]">
-      <div v-if="hint" class="text-xs ml-1" :class="isReady ? 'text-muted-foreground' : 'text-yellow-600'">
+  <div
+    class="border-t bg-background px-4 pt-2"
+    style="padding-bottom: max(env(safe-area-inset-bottom), 24px)"
+  >
+    <div class="flex gap-2 h-10">
+      <Input
+        ref="inputRef"
+        v-model="inputValue"
+        placeholder="输入：10 早餐"
+        class="flex-1 h-full"
+        @keydown="onKeydown"
+      />
+    </div>
+    <div class="flex items-center gap-2 mt-2 min-h-[20px]">
+      <div
+        v-if="hint"
+        class="text-xs ml-1"
+        :class="isReady ? 'text-muted-foreground' : 'text-yellow-600'"
+      >
         {{ hint }}
       </div>
       <Transition name="pop">
@@ -74,21 +88,22 @@ function onKeydown(e: KeyboardEvent) {
         />
       </Transition>
     </div>
-    <div class="flex gap-2">
-      <Input
-        ref="inputRef"
-        v-model="inputValue"
-        placeholder="输入：10 早餐"
-        class="flex-1"
-        @keydown="onKeydown"
-      />
-    </div>
   </div>
 </template>
 
 <style scoped>
-.pop-enter-active { transition: all 0.2s ease-out; }
-.pop-leave-active { transition: all 0.3s ease; }
-.pop-enter-from { opacity: 0; transform: scale(0.5); }
-.pop-leave-to { opacity: 0; transform: scale(0.8); }
+.pop-enter-active {
+  transition: all 0.2s ease-out;
+}
+.pop-leave-active {
+  transition: all 0.3s ease;
+}
+.pop-enter-from {
+  opacity: 0;
+  transform: scale(0.5);
+}
+.pop-leave-to {
+  opacity: 0;
+  transform: scale(0.8);
+}
 </style>

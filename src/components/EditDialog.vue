@@ -2,7 +2,6 @@
 import { ref, watch } from 'vue'
 import type { Transaction } from '@/types'
 import { fenToYuan } from '@/lib/input-parser'
-import { X } from 'lucide-vue-next'
 import {
   Dialog,
   DialogContent,
@@ -54,9 +53,7 @@ function handleSave() {
         <button
           class="absolute right-4 top-4 text-muted-foreground hover:text-foreground transition-colors"
           @click="emit('update:open', false)"
-        >
-          <X :size="16" />
-        </button>
+        ></button>
       </DialogHeader>
       <div class="grid gap-3 py-2">
         <div>
