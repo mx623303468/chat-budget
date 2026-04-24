@@ -143,7 +143,7 @@ nextTick(() => {
       class="flex flex-col items-center justify-center h-full text-muted-foreground"
     >
       <DotLottieVue
-        src="/animations/empty.json"
+        src="animations/empty.json"
         :autoplay="true"
         :loop="true"
         style="width: 120px; height: 120px"

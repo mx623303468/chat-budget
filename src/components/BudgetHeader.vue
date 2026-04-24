@@ -103,7 +103,7 @@ function collapse() {
           <DotLottieVue
             v-if="showWarning"
             :key="warningKey"
-            src="/animations/warning.json"
+            src="animations/warning.json"
             :autoplay="true"
             :loop="false"
             style="width: 48px; height: 48px"

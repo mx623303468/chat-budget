@@ -81,7 +81,7 @@ function onKeydown(e: KeyboardEvent) {
         <DotLottieVue
           v-if="showSuccess"
           :key="successKey"
-          src="/animations/success.json"
+          src="animations/success.json"
           :autoplay="true"
           :loop="false"
           style="width: 24px; height: 24px; flex-shrink: 0"
