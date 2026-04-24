@@ -14,12 +14,7 @@ db.version(1).stores({
 })
 
 // 请求持久化存储，防止浏览器 LRU 清理 IndexedDB 数据
-if (navigator.storage?.persist) {
-  navigator.storage.persist().then((granted) => {
-    if (!granted) {
-      console.warn('持久化存储未获授权，数据可能被浏览器清理')
-    }
-  })
-}
+// 浏览器根据启发式规则自动决定是否授权（如已安装 PWA），无用户弹窗
+navigator.storage?.persist?.()
 
 export { db }
