@@ -13,4 +13,13 @@ db.version(1).stores({
   limitHistory: '++id, date',
 })
 
+// 请求持久化存储，防止浏览器 LRU 清理 IndexedDB 数据
+if (navigator.storage?.persist) {
+  navigator.storage.persist().then((granted) => {
+    if (!granted) {
+      console.warn('持久化存储未获授权，数据可能被浏览器清理')
+    }
+  })
+}
+
 export { db }

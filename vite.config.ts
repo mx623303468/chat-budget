@@ -16,7 +16,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico'],
+      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'animations/*.json'],
       manifest: {
         name: '聊天记账',
         short_name: '记账',
