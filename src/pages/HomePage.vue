@@ -62,33 +62,32 @@ async function onLoadMore() {
 
 <template>
   <div class="h-dvh bg-background overflow-hidden">
-    <!-- 首次使用引导 -->
-    <div
-      v-if="settingsStore.loaded && !settingsStore.isConfigured"
-      class="h-full flex items-center justify-center"
-    >
-      <div class="text-center px-8">
-        <div class="text-lg font-medium mb-2">欢迎使用聊天记账</div>
-        <div class="text-sm text-muted-foreground mb-4">
-          请先设置每日预算
-        </div>
-        <button
-          class="inline-block px-6 py-2 bg-primary text-primary-foreground rounded-lg"
-          @click="navigateTo('settings')"
-        >
-          去设置
-        </button>
-      </div>
-    </div>
+    <!-- 统计/设置页 -->
+    <component
+      v-if="currentView !== 'home'"
+      :is="viewComponents[currentView]"
+      @back="navigateTo('home')"
+    />
 
-    <!-- 主界面 -->
     <template v-else>
-      <!-- 统计/设置页 -->
-      <component
-        v-if="currentView !== 'home'"
-        :is="viewComponents[currentView]"
-        @back="navigateTo('home')"
-      />
+      <!-- 首次使用引导 -->
+      <div
+        v-if="settingsStore.loaded && !settingsStore.isConfigured"
+        class="h-full flex items-center justify-center"
+      >
+        <div class="text-center px-8">
+          <div class="text-lg font-medium mb-2">欢迎使用聊天记账</div>
+          <div class="text-sm text-muted-foreground mb-4">
+            请先设置每日预算
+          </div>
+          <button
+            class="inline-block px-6 py-2 bg-primary text-primary-foreground rounded-lg"
+            @click="navigateTo('settings')"
+          >
+            去设置
+          </button>
+        </div>
+      </div>
 
       <!-- 首页 -->
       <div v-else class="flex flex-col h-full">
