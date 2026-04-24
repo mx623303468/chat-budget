@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
 import { ArrowLeft } from 'lucide-vue-next'
 import { useSettingsStore } from '@/stores/settings'
 import { Button } from '@/components/ui/button'
@@ -14,7 +13,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 
-const router = useRouter()
+const emit = defineEmits<{
+  back: []
+}>()
 const settingsStore = useSettingsStore()
 
 const dailyLimitYuan = ref('')
@@ -47,7 +48,7 @@ async function handleSave(effectMode: 'today' | 'tomorrow') {
   }
 
   showLimitDialog.value = false
-  router.push('/')
+  emit('back')
 }
 
 function save() {
@@ -69,7 +70,7 @@ function save() {
 <template>
   <div class="flex flex-col h-dvh bg-background">
     <div class="relative flex items-center justify-center px-4 py-3 border-b">
-      <Button variant="ghost" size="sm" class="absolute left-4" @click="router.push('/')">
+      <Button variant="ghost" size="sm" class="absolute left-4" @click="emit('back')">
         <ArrowLeft :size="16" />
       </Button>
       <h1 class="text-lg font-medium">设置</h1>
@@ -78,13 +79,7 @@ function save() {
     <div class="flex-1 overflow-y-auto px-4 py-4 space-y-6">
       <div>
         <label class="text-sm font-medium block mb-2">每日限额（元）</label>
-        <Input
-          v-model="dailyLimitYuan"
-          type="number"
-          step="0.01"
-          min="0"
-          placeholder="例如：50"
-        />
+        <Input v-model="dailyLimitYuan" type="number" step="0.01" min="0" placeholder="例如：50" />
       </div>
 
       <Separator />
@@ -92,16 +87,12 @@ function save() {
       <div>
         <label class="text-sm font-medium block mb-2">起始日期</label>
         <Input v-model="startDate" type="date" />
-        <p class="text-xs text-muted-foreground mt-1">
-          用于计算预算累计天数
-        </p>
+        <p class="text-xs text-muted-foreground mt-1">用于计算预算累计天数</p>
       </div>
     </div>
 
-    <div class="px-4 py-3 border-t">
-      <Button class="w-full" :disabled="!canSave" @click="save">
-        保存
-      </Button>
+    <div class="px-4 pb-6 pt-2 border-t">
+      <Button class="w-full h-10" :disabled="!canSave" @click="save"> 保存 </Button>
     </div>
 
     <!-- 限额生效方式 Dialog -->
@@ -110,13 +101,9 @@ function save() {
         <DialogHeader>
           <DialogTitle>限额生效方式</DialogTitle>
         </DialogHeader>
-        <div class="py-2 text-sm text-muted-foreground">
-          你修改了每日限额，请选择生效方式
-        </div>
+        <div class="py-2 text-sm text-muted-foreground">你修改了每日限额，请选择生效方式</div>
         <DialogFooter class="flex-col gap-2">
-          <Button class="w-full" @click="handleSave('today')">
-            今日立即生效
-          </Button>
+          <Button class="w-full" @click="handleSave('today')"> 今日立即生效 </Button>
           <Button variant="outline" class="w-full" @click="handleSave('tomorrow')">
             明日开始生效
           </Button>

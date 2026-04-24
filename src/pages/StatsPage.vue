@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import { ArrowLeft, TrendingUp, TrendingDown, Clock, Wallet } from 'lucide-vue-next'
 import { useTransactionStore } from '@/stores/transaction'
 import { useSettingsStore } from '@/stores/settings'
 import { fenToYuan } from '@/lib/input-parser'
 import { Separator } from '@/components/ui/separator'
 
-const router = useRouter()
+const emit = defineEmits<{
+  back: []
+}>()
 const settingsStore = useSettingsStore()
 const transactionStore = useTransactionStore()
 
@@ -91,7 +92,7 @@ const noteStats = computed(() => {
     <div class="relative flex items-center justify-center px-4 py-3 border-b">
       <button
         class="absolute left-4 text-muted-foreground hover:text-foreground transition-colors p-1"
-        @click="router.push('/')"
+        @click="emit('back')"
       >
         <ArrowLeft :size="20" />
       </button>
