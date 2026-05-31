@@ -1,0 +1,24 @@
+{
+  "name": "@chat-budget/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "build": "wrangler deploy --dry-run",
+    "type-check": "tsc --noEmit",
+    "deploy": "wrangler deploy",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "hono": "^4.7.0"
+  },
+  "devDependencies": {
+    "@chat-budget/shared": "workspace:*",
+    "@cloudflare/workers-types": "^4.20250530.0",
+    "typescript": "~6.0.0",
+    "vitest": "^3.1.0",
+    "wrangler": "^4.18.0"
+  }
+}
