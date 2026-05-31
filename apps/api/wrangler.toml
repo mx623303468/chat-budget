@@ -11,3 +11,12 @@ database_id = "placeholder-change-me"
 ENVIRONMENT = "development"
 JWT_SECRET = "dev-jwt-secret-do-not-use-in-production"
 REFRESH_SECRET = "dev-refresh-secret-do-not-use-in-production"
+
+[durable_objects]
+bindings = [
+  { name = "SYNC_DO", class_name = "SyncDO" }
+]
+
+[[migrations]]
+tag = "v1"
+new_classes = ["SyncDO"]

@@ -3,4 +3,5 @@ export type Env = {
   JWT_SECRET: string
   REFRESH_SECRET: string
   ENVIRONMENT: string
+  SYNC_DO: DurableObjectNamespace
 }
