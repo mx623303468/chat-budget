@@ -222,7 +222,7 @@ CREATE INDEX idx_refresh_sessions_user ON refresh_sessions(user_id, revoked_at);
 
 1. 校验用户是否为账本成员（`ledger_members` 中 `removed_at IS NULL`）
 2. 校验账本未删除（`ledgers.deleted_at IS NULL`）
-3. 查询 `client_mutations`，判断是否重复请求（若已存在且 status=completed，直接返回 response_payload）
+3. 查询 `client_mutations`，判断是否重复请求（若已存在且 status=completed，直接返回 response_payload；若 status=failed，允许重试，覆盖旧记录）
 4. 校验业务约束（version、交易归属、权限）
 5. 写入业务表
 6. 写入 `ledger_events`（id 由 AUTOINCREMENT 生成）
