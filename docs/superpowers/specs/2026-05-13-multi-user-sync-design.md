@@ -249,11 +249,14 @@ CREATE INDEX idx_limit_history_ledger_date ON limit_history(ledger_id, effective
 
 ### WebSocket 认证
 
-- 连接建立后，客户端发送 `{ type: 'subscribe', ledgerId, token }` 消息
-- Durable Object 验证 Access Token 有效性和用户身份
-- 验证通过前不处理任何其他消息
+- WebSocket 升级请求（同域）浏览器自动携带 HttpOnly Cookie
+- Worker 在 upgrade 时解析 Cookie 验证 Access Token，提取 userId
+- Worker 将 userId 通过 DO stub 传递给 Durable Object
+- 连接建立后，客户端发送 `{ type: 'subscribe', ledgerId }` 消息，DO 确认订阅的账本
+- DO 校验用户是否为该账本成员，非成员立即断开连接
+- subscribe 之前 DO 不处理任何其他消息
 - URL 中不传任何认证信息
-- DO 增加 Origin 校验，拒绝非白名单域名的连接
+- Worker 增加 Origin 校验，拒绝非白名单域名的连接
 
 ## 权限矩阵
 
@@ -288,7 +291,7 @@ requireTransactionOwnerOrLedgerOwner(transactionId, userId)
 // 客户端 → 服务器
 type ClientMessage =
   | { type: 'ping' }
-  | { type: 'subscribe'; ledgerId: string; token: string }
+  | { type: 'subscribe'; ledgerId: string }
   | { type: 'unsubscribe' }
 
 // 服务器 → 客户端（统一事件格式）
@@ -369,7 +372,8 @@ Content-Type: application/json
 
 - 一个账本对应一个 DO 实例
 - 管理所有在线成员的 WebSocket 连接
-- 接收 subscribe 消息并验证 token
+- 从 Worker 接收 userId（Worker 已在升级时验证 Cookie 中的 JWT）
+- 接收 subscribe 消息并验证用户是否为该账本成员
 - 广播事件给所有已连接的 WebSocket 客户端
 - 不存储业务数据（D1 负责持久化）
 - DO 被驱逐后客户端自动重连，无状态丢失（所有状态在 D1）
