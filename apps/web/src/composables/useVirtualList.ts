@@ -7,13 +7,23 @@ export interface VirtualItem {
   measured: boolean
 }
 
-export type GroupItem =
-  | { type: 'date'; date: string; label: string }
-  | { type: 'transaction'; data: { id?: number; [k: string]: unknown } }
+export type DateGroupItem = { type: 'date'; date: string; label: string }
+
+export type TransactionGroupItem = {
+  type: 'transaction'
+  data: { id: string; [k: string]: unknown }
+  isMine: boolean
+  nickname?: string
+  avatar?: string | null
+  showNickname: boolean
+  showAvatar: boolean
+}
+
+export type GroupItem = DateGroupItem | TransactionGroupItem
 
 const BUFFER = 5
 const EST_DATE_H = 32
-const EST_BUBBLE_H = 72
+const EST_BUBBLE_H = 80
 
 function estimateHeight(item: GroupItem): number {
   return item.type === 'date' ? EST_DATE_H : EST_BUBBLE_H

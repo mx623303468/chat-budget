@@ -1,19 +1,25 @@
+<script lang="ts">
+export type MemberMap = Record<string, { nickname: string; avatar: string | null }>
+</script>
+
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
 import { DotLottieVue } from '@lottiefiles/dotlottie-vue'
 import type { Transaction } from '@/types'
 import ChatBubble from './ChatBubble.vue'
-import { useVirtualList, type GroupItem } from '@/composables/useVirtualList'
+import { useVirtualList, type GroupItem, type TransactionGroupItem } from '@/composables/useVirtualList'
 import { formatDateLabel } from '@/lib/date-utils'
 
 const props = defineProps<{
   transactions: Transaction[]
   hasMore: boolean
   loading: boolean
+  memberMap: MemberMap
+  currentUserId: string
 }>()
 
 const emit = defineEmits<{
-  delete: [id: number]
+  delete: [id: string]
   edit: [transaction: Transaction]
   'load-more': []
 }>()
@@ -24,20 +30,38 @@ const containerRef = ref<HTMLElement | null>(null)
 const grouped = computed<GroupItem[]>(() => {
   const result: GroupItem[] = []
   let lastDate = ''
+  let lastUserId = ''
 
   for (const t of props.transactions) {
     if (t.date !== lastDate) {
       result.push({ type: 'date', date: t.date, label: formatDateLabel(t.date) })
       lastDate = t.date
+      lastUserId = ''
     }
-    result.push({ type: 'transaction', data: t })
+
+    const isMine = t.userId === props.currentUserId
+    const member = props.memberMap[t.userId]
+    const showNickname = t.userId !== lastUserId
+    const showAvatar = t.userId !== lastUserId
+
+    result.push({
+      type: 'transaction',
+      data: t,
+      isMine,
+      nickname: member?.nickname,
+      avatar: member?.avatar ?? null,
+      showNickname,
+      showAvatar,
+    })
+
+    lastUserId = t.userId
   }
 
   return result
 })
 
-function itemKey(item: GroupItem): string | number {
-  return item.type === 'date' ? `date-${item.date}` : (item.data.id ?? 0)
+function itemKey(item: GroupItem): string {
+  return item.type === 'date' ? `date-${item.date}` : item.data.id
 }
 
 const {
@@ -170,7 +194,12 @@ nextTick(() => {
         </div>
         <ChatBubble
           v-else
-          :transaction="(item as { type: 'transaction'; data: Transaction }).data"
+          :transaction="(item as TransactionGroupItem).data"
+          :is-mine="(item as TransactionGroupItem).isMine"
+          :nickname="(item as TransactionGroupItem).nickname"
+          :avatar="(item as TransactionGroupItem).avatar"
+          :show-nickname="(item as TransactionGroupItem).showNickname"
+          :show-avatar="(item as TransactionGroupItem).showAvatar"
           :animate="idx === grouped.length - 1"
           @delete="emit('delete', $event)"
           @edit="emit('edit', $event)"
@@ -202,7 +231,12 @@ nextTick(() => {
           <ChatBubble
             v-else
             :animate="false"
-            :transaction="(vi.item as { type: 'transaction'; data: Transaction }).data"
+            :transaction="(vi.item as TransactionGroupItem).data"
+            :is-mine="(vi.item as TransactionGroupItem).isMine"
+            :nickname="(vi.item as TransactionGroupItem).nickname"
+            :avatar="(vi.item as TransactionGroupItem).avatar"
+            :show-nickname="(vi.item as TransactionGroupItem).showNickname"
+            :show-avatar="(vi.item as TransactionGroupItem).showAvatar"
             @delete="emit('delete', $event)"
             @edit="emit('edit', $event)"
           />

@@ -1,13 +1,17 @@
 <script setup lang="ts">
 import { ref, onMounted, defineAsyncComponent, type Component } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { ArrowLeft } from 'lucide-vue-next'
 import BudgetHeader from '@/components/BudgetHeader.vue'
-import VirtualChatList from '@/components/VirtualChatList.vue'
+import VirtualChatList, { type MemberMap } from '@/components/VirtualChatList.vue'
 import ChatInput from '@/components/ChatInput.vue'
 import EditDialog from '@/components/EditDialog.vue'
 import { useTransactionStore } from '@/stores/transaction'
-import { useSettingsStore } from '@/stores/settings'
-import { usePagedTransactions } from '@/composables/usePagedTransactions'
-import type { Transaction } from '@/types'
+import { useLedgersStore } from '@/stores/ledgers'
+import { useRealtimeSync } from '@/composables/useRealtimeSync'
+import { membersApi } from '@/lib/api'
+import { useAuthStore } from '@/stores/auth'
+import type { Transaction } from '@chat-budget/shared'
 
 type ViewName = 'home' | 'stats' | 'settings'
 
@@ -17,32 +21,67 @@ const viewComponents: Record<ViewName, Component> = {
   settings: defineAsyncComponent(() => import('@/pages/SettingsPage.vue')),
 }
 
-const currentView = ref<ViewName>('home')
-const settingsStore = useSettingsStore()
+const route = useRoute()
+const router = useRouter()
+const ledgersStore = useLedgersStore()
 const transactionStore = useTransactionStore()
-const paged = usePagedTransactions()
+const { syncState, connect: connectWs, disconnect: disconnectWs } = useRealtimeSync()
 
+const currentView = ref<ViewName>('home')
 const editOpen = ref(false)
 const editTarget = ref<Transaction | null>(null)
 
+const ledgerId = route.params.id as string
+
+const authStore = useAuthStore()
+const memberMap = ref<MemberMap>({})
+
+async function fetchMembers() {
+  try {
+    const res = await membersApi.list(ledgerId)
+    const map: MemberMap = {}
+    for (const m of res.members) {
+      map[m.userId] = { nickname: m.nickname, avatar: null }
+    }
+    if (authStore.user) {
+      map[authStore.user.id] = {
+        nickname: authStore.user.nickname,
+        avatar: authStore.user.avatar,
+      }
+    }
+    memberMap.value = map
+  } catch {
+    // 成员列表获取失败不阻塞页面
+  }
+}
+
 onMounted(async () => {
-  await settingsStore.loadSettings()
-  await transactionStore.loadTransactions()
-  await paged.loadInitial()
+  if (!ledgersStore.currentLedger || ledgersStore.currentLedgerId !== ledgerId) {
+    ledgersStore.selectLedger(ledgerId)
+    await ledgersStore.fetchLedgers()
+  }
+  await Promise.all([
+    transactionStore.loadTransactions(ledgerId),
+    fetchMembers(),
+  ])
+  connectWs(ledgerId)
 })
 
 function navigateTo(view: ViewName) {
   currentView.value = view
 }
 
-function onSubmit(amount: number, note: string) {
-  paged.addTransaction(amount, note)
-  transactionStore.loadTransactions()
+function goBack() {
+  disconnectWs()
+  router.push({ name: 'ledgers' })
 }
 
-function onDelete(id: number) {
-  paged.deleteTransaction(id)
-  transactionStore.loadTransactions()
+async function onSubmit(amount: number, note: string) {
+  await transactionStore.addTransaction(ledgerId, amount, note)
+}
+
+async function onDelete(id: string) {
+  await transactionStore.deleteTransaction(ledgerId, id)
 }
 
 function onEdit(transaction: Transaction) {
@@ -50,13 +89,12 @@ function onEdit(transaction: Transaction) {
   editOpen.value = true
 }
 
-function onSaveEdit(id: number, data: { amount: number; note: string }) {
-  paged.updateTransaction(id, data)
-  transactionStore.loadTransactions()
+async function onSaveEdit(id: string, data: { amount: number; note: string }) {
+  await transactionStore.updateTransaction(ledgerId, id, data)
 }
 
 async function onLoadMore() {
-  await paged.loadOlder()
+  await transactionStore.loadOlder(ledgerId)
 }
 </script>
 
@@ -66,36 +104,37 @@ async function onLoadMore() {
     <component
       v-if="currentView !== 'home'"
       :is="viewComponents[currentView]"
+      :ledger-id="ledgerId"
       @back="navigateTo('home')"
     />
 
     <template v-else>
-      <!-- 首次使用引导 -->
-      <div
-        v-if="settingsStore.loaded && !settingsStore.isConfigured"
-        class="h-full flex items-center justify-center"
-      >
-        <div class="text-center px-8">
-          <div class="text-lg font-medium mb-2">欢迎使用聊天记账</div>
-          <div class="text-sm text-muted-foreground mb-4">
-            请先设置每日预算
-          </div>
-          <button
-            class="inline-block px-6 py-2 bg-primary text-primary-foreground rounded-lg"
-            @click="navigateTo('settings')"
-          >
-            去设置
-          </button>
-        </div>
-      </div>
-
       <!-- 首页 -->
-      <div v-else class="flex flex-col h-full">
+      <div class="flex flex-col h-full">
+        <!-- 顶栏 -->
+        <div class="flex items-center gap-2 px-4 py-2 border-b">
+          <button
+            class="text-muted-foreground hover:text-foreground transition-colors p-1"
+            @click="goBack"
+          >
+            <ArrowLeft :size="18" />
+          </button>
+          <h1 class="text-sm font-medium truncate">
+            {{ ledgersStore.currentLedger?.name ?? '账本' }}
+          </h1>
+          <span
+            class="w-2 h-2 rounded-full shrink-0"
+            :class="syncState === 'live' ? 'bg-green-500' : 'bg-yellow-500'"
+          />
+        </div>
+
         <BudgetHeader @navigate="navigateTo" />
         <VirtualChatList
-          :transactions="paged.displayItems.value"
-          :has-more="paged.hasMore.value"
-          :loading="paged.loading.value"
+          :transactions="transactionStore.transactions"
+          :has-more="transactionStore.hasMore"
+          :loading="transactionStore.loading"
+          :member-map="memberMap"
+          :current-user-id="authStore.user?.id ?? ''"
           @delete="onDelete"
           @edit="onEdit"
           @load-more="onLoadMore"
