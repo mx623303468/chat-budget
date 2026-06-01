@@ -1,4 +1,5 @@
 import { ref, computed, watch, nextTick, type Ref } from 'vue'
+import type { Transaction } from '@/types'
 
 export interface VirtualItem {
   index: number
@@ -11,7 +12,7 @@ export type DateGroupItem = { type: 'date'; date: string; label: string }
 
 export type TransactionGroupItem = {
   type: 'transaction'
-  data: { id: string; [k: string]: unknown }
+  data: Transaction
   isMine: boolean
   nickname?: string
   avatar?: string | null

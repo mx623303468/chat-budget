@@ -194,7 +194,7 @@ nextTick(() => {
         </div>
         <ChatBubble
           v-else
-          :transaction="(item as TransactionGroupItem).data"
+          :transaction="(item as TransactionGroupItem).data as any"
           :is-mine="(item as TransactionGroupItem).isMine"
           :nickname="(item as TransactionGroupItem).nickname"
           :avatar="(item as TransactionGroupItem).avatar"
@@ -231,7 +231,7 @@ nextTick(() => {
           <ChatBubble
             v-else
             :animate="false"
-            :transaction="(vi.item as TransactionGroupItem).data"
+            :transaction="(vi.item as TransactionGroupItem).data as any"
             :is-mine="(vi.item as TransactionGroupItem).isMine"
             :nickname="(vi.item as TransactionGroupItem).nickname"
             :avatar="(vi.item as TransactionGroupItem).avatar"
