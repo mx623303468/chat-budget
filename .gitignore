@@ -39,3 +39,9 @@ __screenshots__/
 *.timestamp-*-*.mjs
 apps/api/.wrangler/
 apps/api/dist/
+
+# Superpowers brainstorming
+.superpowers/
+
+# Windows crash dumps
+bash.exe.stackdump
