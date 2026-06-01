@@ -2,7 +2,8 @@ import { setCookie, getCookie } from 'hono/cookie'
 import type { Context } from 'hono'
 
 function isDev(c: Context): boolean {
-  return c.env.ENVIRONMENT === 'development'
+  const url = new URL(c.req.url)
+  return url.hostname === 'localhost' || url.hostname === '127.0.0.1'
 }
 
 export function setAccessCookie(c: Context, token: string) {

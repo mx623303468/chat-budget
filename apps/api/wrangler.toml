@@ -1,16 +1,15 @@
 name = "chat-budget-api"
 main = "src/index.ts"
 compatibility_date = "2025-05-30"
+assets = { directory = "../web/dist", binding = "ASSETS", not_found_handling = "single-page-application" }
 
 [[d1_databases]]
 binding = "DB"
 database_name = "chat-budget"
-database_id = "placeholder-change-me"
+database_id = "b91768c2-1785-40f6-8021-6148153923e3"
 
 [vars]
-ENVIRONMENT = "development"
-JWT_SECRET = "dev-jwt-secret-do-not-use-in-production"
-REFRESH_SECRET = "dev-refresh-secret-do-not-use-in-production"
+ENVIRONMENT = "production"
 
 [durable_objects]
 bindings = [
@@ -19,4 +18,4 @@ bindings = [
 
 [[migrations]]
 tag = "v1"
-new_classes = ["SyncDO"]
+new_sqlite_classes = ["SyncDO"]
