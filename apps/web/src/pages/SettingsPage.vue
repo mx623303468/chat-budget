@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowLeft, Copy, RefreshCw, Check, LogOut, X } from 'lucide-vue-next'
+import { ArrowLeft, Copy, RefreshCw, Check, LogOut } from 'lucide-vue-next'
 import { useLedgersStore } from '@/stores/ledgers'
 import { useAuthStore } from '@/stores/auth'
 import { invitesApi, membersApi } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
+import SwipeDelete from '@/components/SwipeDelete.vue'
 import {
   Dialog,
   DialogContent,
@@ -274,27 +275,23 @@ async function handleLeave() {
         <h2 class="text-sm font-medium mb-2">成员</h2>
         <div v-if="members.length === 0" class="text-xs text-muted-foreground">加载中...</div>
         <div v-else class="space-y-1">
-          <div
-            v-for="m in members"
-            :key="m.userId"
-            class="flex items-center justify-between py-1.5"
-          >
-            <span class="text-sm">{{ m.nickname }}</span>
-            <div class="flex items-center gap-2">
+          <template v-for="m in members" :key="m.userId">
+            <SwipeDelete
+              v-if="isOwner && m.role !== 'owner'"
+              @delete="confirmRemove(m)"
+            >
+              <div class="flex items-center justify-between px-3 py-2.5">
+                <span class="text-sm">{{ m.nickname }}</span>
+                <span class="text-xs text-muted-foreground">成员</span>
+              </div>
+            </SwipeDelete>
+            <div v-else class="flex items-center justify-between py-2.5 px-1">
+              <span class="text-sm">{{ m.nickname }}</span>
               <span class="text-xs text-muted-foreground">
                 {{ m.role === 'owner' ? '拥有者' : '成员' }}
               </span>
-              <Button
-                v-if="isOwner && m.role !== 'owner'"
-                variant="ghost"
-                size="icon"
-                class="h-6 w-6 text-muted-foreground hover:text-destructive"
-                @click="confirmRemove(m)"
-              >
-                <X :size="14" />
-              </Button>
             </div>
-          </div>
+          </template>
         </div>
       </div>
 
