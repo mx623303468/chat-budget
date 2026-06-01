@@ -24,7 +24,13 @@ invites.get('/ledgers/:id/invite', authMiddleware, async (c) => {
     'SELECT * FROM ledger_invites WHERE ledger_id = ? AND revoked_at IS NULL AND expires_at > ? ORDER BY created_at DESC LIMIT 1'
   ).bind(ledgerId, Date.now()).first()
 
-  return c.json({ invite })
+  if (!invite) return c.json({ id: null, code: null, expiresAt: null })
+
+  return c.json({
+    id: invite.id,
+    code: invite.code,
+    expiresAt: invite.expires_at,
+  })
 })
 
 // POST /api/ledgers/:id/invite/rotate — 重新生成邀请码（仅 owner）
@@ -51,7 +57,7 @@ invites.post('/ledgers/:id/invite/rotate', authMiddleware, async (c) => {
   await c.env.DB.prepare('INSERT INTO ledger_invites (id, ledger_id, code, created_by, expires_at, created_at) VALUES (?, ?, ?, ?, ?, ?)')
     .bind(inviteId, ledgerId, newCode, userId, now + 24 * 60 * 60 * 1000, now).run()
 
-  return c.json({ invite: { id: inviteId, code: newCode, expiresAt: now + 24 * 60 * 60 * 1000 } })
+  return c.json({ id: inviteId, code: newCode, expiresAt: now + 24 * 60 * 60 * 1000 })
 })
 
 // GET /api/invites/:code — 预览邀请信息
@@ -72,11 +78,8 @@ invites.get('/invites/:code', async (c) => {
   ).bind(invite.ledger_id).first<{ count: number }>()
 
   return c.json({
-    invite: {
-      ledgerId: invite.ledger_id,
-      ledgerName: invite.ledger_name,
-      memberCount: memberCount?.count ?? 0,
-    }
+    ledgerName: invite.ledger_name,
+    memberCount: memberCount?.count ?? 0,
   })
 })
 

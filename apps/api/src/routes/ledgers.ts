@@ -4,6 +4,21 @@ import { authMiddleware } from '../middleware/auth'
 import { generateInviteCode } from '../lib/invite'
 import { requireMember, requireOwner, requireLedgerNotDeleted } from '../lib/queries'
 
+type LedgerRow = Record<string, unknown>
+
+function mapLedger(row: LedgerRow) {
+  return {
+    id: row.id,
+    name: row.name,
+    ownerId: row.owner_id,
+    dailyLimit: row.daily_limit,
+    startDate: row.start_date,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    deletedAt: row.deleted_at,
+  }
+}
+
 const ledgers = new Hono<{ Bindings: Env; Variables: { userId: string } }>()
 
 ledgers.use('*', authMiddleware)
@@ -17,7 +32,7 @@ ledgers.get('/', async (c) => {
     WHERE lm.user_id = ? AND lm.removed_at IS NULL AND l.deleted_at IS NULL
     ORDER BY l.created_at DESC
   `).bind(userId).all()
-  return c.json({ ledgers: results.results })
+  return c.json({ ledgers: results.results.map(mapLedger) })
 })
 
 // POST /api/ledgers — 创建账本
@@ -60,7 +75,7 @@ ledgers.get('/:id', async (c) => {
   }
 
   const ledger = await c.env.DB.prepare('SELECT * FROM ledgers WHERE id = ?').bind(ledgerId).first()
-  return c.json({ ledger })
+  return c.json({ ledger: mapLedger(ledger as LedgerRow) })
 })
 
 // PUT /api/ledgers/:id — 更新账本（仅 owner）
@@ -85,7 +100,7 @@ ledgers.put('/:id', async (c) => {
   `).bind(name ?? null, dailyLimit !== undefined ? dailyLimit : null, startDate ?? null, now, ledgerId).run()
 
   const ledger = await c.env.DB.prepare('SELECT * FROM ledgers WHERE id = ?').bind(ledgerId).first()
-  return c.json({ ledger })
+  return c.json({ ledger: mapLedger(ledger as LedgerRow) })
 })
 
 // DELETE /api/ledgers/:id — 软删除账本（仅 owner）

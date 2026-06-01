@@ -1,10 +1,14 @@
 import { setCookie, getCookie } from 'hono/cookie'
 import type { Context } from 'hono'
 
+function isDev(c: Context): boolean {
+  return c.env.ENVIRONMENT === 'development'
+}
+
 export function setAccessCookie(c: Context, token: string) {
   setCookie(c, 'access_token', token, {
     httpOnly: true,
-    secure: true,
+    secure: !isDev(c),
     sameSite: 'Lax',
     path: '/',
     maxAge: 15 * 60,
@@ -14,7 +18,7 @@ export function setAccessCookie(c: Context, token: string) {
 export function setRefreshCookie(c: Context, token: string) {
   setCookie(c, 'refresh_token', token, {
     httpOnly: true,
-    secure: true,
+    secure: !isDev(c),
     sameSite: 'Lax',
     path: '/api/auth/refresh',
     maxAge: 7 * 24 * 60 * 60,
@@ -22,8 +26,8 @@ export function setRefreshCookie(c: Context, token: string) {
 }
 
 export function clearCookies(c: Context) {
-  setCookie(c, 'access_token', '', { httpOnly: true, secure: true, sameSite: 'Lax', path: '/', maxAge: 0 })
-  setCookie(c, 'refresh_token', '', { httpOnly: true, secure: true, sameSite: 'Lax', path: '/api/auth/refresh', maxAge: 0 })
+  setCookie(c, 'access_token', '', { httpOnly: true, secure: !isDev(c), sameSite: 'Lax', path: '/', maxAge: 0 })
+  setCookie(c, 'refresh_token', '', { httpOnly: true, secure: !isDev(c), sameSite: 'Lax', path: '/api/auth/refresh', maxAge: 0 })
 }
 
 export function getAccessToken(c: Context): string | undefined {

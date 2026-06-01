@@ -3,6 +3,18 @@ import type { Env } from '../env'
 import { authMiddleware } from '../middleware/auth'
 import { requireMember, requireOwner, requireLedgerNotDeleted } from '../lib/queries'
 
+type MemberRow = Record<string, unknown>
+
+function mapMember(row: MemberRow) {
+  return {
+    userId: row.user_id,
+    nickname: row.nickname,
+    role: row.role,
+    joinedAt: row.joined_at,
+    removedAt: row.removed_at,
+  }
+}
+
 const members = new Hono<{ Bindings: Env; Variables: { userId: string } }>()
 
 members.use('*', authMiddleware)
@@ -28,7 +40,7 @@ members.get('/', async (c) => {
     ORDER BY lm.removed_at ASC, lm.joined_at ASC
   `).bind(ledgerId).all()
 
-  return c.json({ members: results.results })
+  return c.json({ members: results.results.map(mapMember) })
 })
 
 // DELETE /api/ledgers/:id/members/me — 成员主动退出（必须在 /:uid 之前）

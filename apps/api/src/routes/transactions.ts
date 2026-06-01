@@ -5,6 +5,36 @@ import { requireMember, requireLedgerNotDeleted } from '../lib/queries'
 
 type AppEnv = { Bindings: Env; Variables: { userId: string } }
 
+type TxRow = Record<string, unknown>
+
+function mapTx(row: TxRow) {
+  return {
+    id: row.id,
+    ledgerId: row.ledger_id,
+    userId: row.user_id,
+    amount: row.amount,
+    note: row.note,
+    date: row.date,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    deletedAt: row.deleted_at,
+    createdBy: row.created_by,
+    updatedBy: row.updated_by,
+    deletedBy: row.deleted_by,
+    version: row.version,
+  }
+}
+
+async function broadcast(c: { env: Env }, ledgerId: string, event: Record<string, unknown>) {
+  const id = c.env.SYNC_DO.idFromName(ledgerId)
+  const stub = c.env.SYNC_DO.get(id)
+  await stub.fetch(new Request('https://do/broadcast', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ event, excludeUserId: event.actorUserId }),
+  }))
+}
+
 const transactions = new Hono<AppEnv>()
 
 transactions.use('*', authMiddleware)
@@ -70,7 +100,7 @@ transactions.get('/', async (c) => {
     ? encodeCursor(rows[rows.length - 1]!.date as string, rows[rows.length - 1]!.created_at as number, rows[rows.length - 1]!.id as string)
     : null
 
-  return c.json({ transactions: rows, nextCursor })
+  return c.json({ transactions: rows.map(mapTx), nextCursor })
 })
 
 transactions.post('/', async (c) => {
@@ -125,6 +155,19 @@ transactions.post('/', async (c) => {
       'INSERT INTO client_mutations (id, ledger_id, user_id, operation_type, entity_type, entity_id, status, response_payload, expires_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
     ).bind(body.clientMutationId, ledgerId, userId, 'create_transaction', 'transaction', body.id, 'completed', JSON.stringify(responsePayload), now + 30 * 24 * 60 * 60 * 1000, now),
   ])
+
+  c.executionCtx.waitUntil(
+    broadcast(c, ledgerId, {
+      type: 'transaction_added',
+      ledgerId,
+      eventId: 0,
+      entityId: body.id,
+      actorUserId: userId,
+      clientMutationId: body.clientMutationId,
+      occurredAt: now,
+      payload: { transaction: { id: body.id, ledgerId, userId: transactionUserId, amount: body.amount, note: body.note, date: body.date, createdAt: now, updatedAt: now, deletedAt: null, createdBy: userId, updatedBy: null, deletedBy: null, version: 1 } },
+    })
+  )
 
   return c.json(responsePayload, 201)
 })
@@ -197,6 +240,19 @@ transactions.put('/:tid', async (c) => {
     ).bind(body.clientMutationId, ledgerId, userId, 'update_transaction', 'transaction', transactionId, 'completed', JSON.stringify(responsePayload), now + 30 * 24 * 60 * 60 * 1000, now),
   ])
 
+  c.executionCtx.waitUntil(
+    broadcast(c, ledgerId, {
+      type: 'transaction_updated',
+      ledgerId,
+      eventId: 0,
+      entityId: transactionId,
+      actorUserId: userId,
+      clientMutationId: body.clientMutationId,
+      occurredAt: now,
+      payload: { transaction: { id: transactionId, ledgerId, userId: tx.user_id as string, amount: newAmount as number, note: newNote as string, date: newDate as string, createdAt: tx.created_at as number, updatedAt: now, deletedAt: null, createdBy: tx.created_by as string, updatedBy: userId, deletedBy: null, version: newVersion } },
+    })
+  )
+
   return c.json(responsePayload)
 })
 
@@ -258,6 +314,19 @@ transactions.delete('/:tid', async (c) => {
   }
 
   await c.env.DB.batch(batchStmts)
+
+  c.executionCtx.waitUntil(
+    broadcast(c, ledgerId, {
+      type: 'transaction_deleted',
+      ledgerId,
+      eventId: 0,
+      entityId: transactionId,
+      actorUserId: userId,
+      clientMutationId: mutationId,
+      occurredAt: now,
+      payload: { transactionId, deletedAt: now, version: newVersion },
+    })
+  )
 
   return c.json({ ok: true })
 })
