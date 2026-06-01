@@ -10,6 +10,20 @@ import { VitePWA } from 'vite-plugin-pwa'
 // https://vite.dev/config/
 export default defineConfig({
   base: '/chat-budget/',
+  server: {
+    host: '0.0.0.0',
+    proxy: {
+      '/api/ws': {
+        target: 'ws://localhost:8787',
+        ws: true,
+        changeOrigin: true,
+      },
+      '/api': {
+        target: 'http://localhost:8787',
+        changeOrigin: true,
+      },
+    },
+  },
   plugins: [
     vue(),
     vueJsx(),

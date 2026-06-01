@@ -15,6 +15,7 @@
     "format": "oxfmt src/"
   },
   "dependencies": {
+    "@chat-budget/shared": "workspace:*",
     "@lottiefiles/dotlottie-vue": "^0.11.11",
     "@vueuse/core": "^14.2.1",
     "class-variance-authority": "^0.7.1",

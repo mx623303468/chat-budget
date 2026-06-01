@@ -1,11 +1,14 @@
-export type Transaction = {
-  id?: number
-  amount: number
-  note: string
-  date: string
-  createdAt: number
-}
+// 从共享包重新导出共享类型
+export type {
+  User,
+  Ledger,
+  LedgerMember,
+  LedgerInvite,
+  Transaction,
+  LedgerEvent,
+} from '@chat-budget/shared'
 
+// 纯前端类型（本地 IndexedDB 使用）
 export type Settings = {
   id?: number
   dailyLimit: number
