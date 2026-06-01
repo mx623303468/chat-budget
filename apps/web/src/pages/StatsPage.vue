@@ -1,35 +1,37 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed } from 'vue'
 import { ArrowLeft, TrendingUp, TrendingDown, Clock, Wallet } from 'lucide-vue-next'
 import { useTransactionStore } from '@/stores/transaction'
-import { useSettingsStore } from '@/stores/settings'
+import { useLedgersStore } from '@/stores/ledgers'
 import { fenToYuan } from '@/lib/input-parser'
 import { Separator } from '@/components/ui/separator'
+
+defineProps<{
+  ledgerId: string
+}>()
 
 const emit = defineEmits<{
   back: []
 }>()
-const settingsStore = useSettingsStore()
-const transactionStore = useTransactionStore()
 
-onMounted(async () => {
-  await settingsStore.loadSettings()
-  await transactionStore.loadTransactions()
-})
+const ledgersStore = useLedgersStore()
+const transactionStore = useTransactionStore()
 
 const totalSpendYuan = computed(() => fenToYuan(transactionStore.totalSpend))
 const balanceYuan = computed(() => fenToYuan(transactionStore.balance))
 const todaySpendYuan = computed(() => fenToYuan(transactionStore.todaySpend))
 
+const ledger = computed(() => ledgersStore.currentLedger)
+
 const totalDays = computed(() => {
-  if (!settingsStore.startDate) return 0
-  const start = new Date(settingsStore.startDate)
+  if (!ledger.value?.startDate) return 0
+  const start = new Date(ledger.value.startDate)
   const today = new Date(new Date().toISOString().slice(0, 10))
   const diff = Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
   return Math.max(diff, 0)
 })
 
-const dailyLimitYuan = computed(() => fenToYuan(settingsStore.dailyLimit))
+const dailyLimitYuan = computed(() => fenToYuan(ledger.value?.dailyLimit ?? 0))
 
 const avgDailySpend = computed(() => {
   if (totalDays.value === 0) return '0'
@@ -42,7 +44,6 @@ const dailyStats = computed(() => {
   const map = new Map<string, number>()
   const today = new Date()
 
-  // 初始化最近7天
   for (let i = 6; i >= 0; i--) {
     const d = new Date(today)
     d.setDate(d.getDate() - i)
@@ -50,7 +51,6 @@ const dailyStats = computed(() => {
     map.set(key, 0)
   }
 
-  // 累加支出
   for (const t of transactionStore.transactions) {
     if (map.has(t.date)) {
       map.set(t.date, (map.get(t.date) ?? 0) + t.amount)
@@ -62,7 +62,7 @@ const dailyStats = computed(() => {
 
   return entries.map(([date, amount]) => ({
     date,
-    label: date.slice(5), // MM-DD
+    label: date.slice(5),
     amountYuan: fenToYuan(amount),
     percent: Math.round((amount / maxAmount) * 100),
     isToday: date === new Date().toISOString().slice(0, 10),
@@ -191,7 +191,7 @@ const noteStats = computed(() => {
       <Separator />
       <div class="text-xs text-muted-foreground space-y-1 pb-4">
         <div>每日限额：{{ dailyLimitYuan }} 元</div>
-        <div>起始日期：{{ settingsStore.startDate }}</div>
+        <div>起始日期：{{ ledger?.startDate }}</div>
         <div>已累计：{{ totalDays }} 天</div>
       </div>
     </div>

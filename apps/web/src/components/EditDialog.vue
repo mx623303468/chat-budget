@@ -19,7 +19,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:open': [value: boolean]
-  save: [id: number, data: { amount: number; note: string }]
+  save: [id: string, data: { amount: number; note: string }]
 }>()
 
 const amountStr = ref('')
@@ -36,7 +36,7 @@ watch(
 )
 
 function handleSave() {
-  if (!props.transaction?.id) return
+  if (!props.transaction) return
   const yuan = parseFloat(amountStr.value)
   if (Number.isNaN(yuan) || yuan <= 0) return
   const fen = Math.round(yuan * 100)

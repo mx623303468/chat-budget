@@ -3,14 +3,15 @@ import { computed, ref, watch } from 'vue'
 import { DotLottieVue } from '@lottiefiles/dotlottie-vue'
 import { fenToYuan } from '@/lib/input-parser'
 import { useTransactionStore } from '@/stores/transaction'
-import { useSettingsStore } from '@/stores/settings'
+import { useLedgersStore } from '@/stores/ledgers'
 import { Separator } from '@/components/ui/separator'
 import { BarChart3, Settings } from 'lucide-vue-next'
 
 const emit = defineEmits<{
   navigate: [view: 'home' | 'stats' | 'settings']
 }>()
-const settings = useSettingsStore()
+
+const ledgersStore = useLedgersStore()
 const transactionStore = useTransactionStore()
 
 const balanceYuan = computed(() => fenToYuan(transactionStore.balance))
@@ -44,7 +45,7 @@ watch(
 const expanded = ref(false)
 const pullY = ref(0)
 const pulling = ref(false)
-const EXPAND_H = 52 // 展开后额外高度
+const EXPAND_H = 52
 let touchStartY = 0
 
 function onTouchStart(e: TouchEvent) {
@@ -58,7 +59,6 @@ function onTouchMove(e: TouchEvent) {
 
   if (!expanded.value && dy > 0) {
     e.preventDefault()
-    // 弹性阻尼
     const damped = dy * 0.5
     pullY.value = Math.min(damped, EXPAND_H + 10)
   }

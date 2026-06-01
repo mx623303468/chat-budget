@@ -119,7 +119,7 @@ async function onLoadMore() {
           >
             <ArrowLeft :size="18" />
           </button>
-          <h1 class="text-sm font-medium truncate">
+          <h1 class="text-sm font-medium truncate text-center flex-1">
             {{ ledgersStore.currentLedger?.name ?? '账本' }}
           </h1>
           <span
