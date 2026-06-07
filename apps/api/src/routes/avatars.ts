@@ -14,13 +14,15 @@ avatars.get('/:userId/:avatarId', async (c) => {
 
   const row = await c.env.DB.prepare(
     'SELECT data, mime_type FROM avatars WHERE user_id = ? AND id = ?'
-  ).bind(userId, avatarId).first<{ data: ArrayBuffer; mime_type: string }>()
+  ).bind(userId, avatarId).first<{ data: string; mime_type: string }>()
 
   if (!row) {
     return c.json({ error: '头像不存在' }, 404)
   }
 
-  return new Response(row.data, {
+  const binary = Uint8Array.from(atob(row.data), (c) => c.charCodeAt(0))
+
+  return new Response(binary, {
     headers: {
       'Content-Type': row.mime_type,
       'Cache-Control': 'public, max-age=86400, immutable',

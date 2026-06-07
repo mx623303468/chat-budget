@@ -2,7 +2,7 @@
 CREATE TABLE avatars (
   id TEXT NOT NULL,
   user_id TEXT NOT NULL,
-  data BLOB NOT NULL,
+  data TEXT NOT NULL,
   mime_type TEXT NOT NULL,
   created_at INTEGER NOT NULL,
   PRIMARY KEY (user_id, id),

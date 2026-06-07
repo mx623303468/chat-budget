@@ -183,12 +183,16 @@ auth.patch('/profile', authMiddleware, async (c) => {
 
     const avatarId = generateAvatarKey()
     newAvatarKey = `${userId}/${avatarId}`
+    const bytes = new Uint8Array(buffer)
+    let bin = ''
+    for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i])
+    const base64 = btoa(bin)
 
     const now = Date.now()
     await c.env.DB.batch([
       c.env.DB.prepare(
         'INSERT OR REPLACE INTO avatars (id, user_id, data, mime_type, created_at) VALUES (?, ?, ?, ?, ?)'
-      ).bind(avatarId, userId, buffer, mimeType, now),
+      ).bind(avatarId, userId, base64, mimeType, now),
       c.env.DB.prepare(
         'UPDATE users SET nickname = COALESCE(?, nickname), avatar = ?, updated_at = ? WHERE id = ?'
       ).bind(nickname ?? null, newAvatarKey, now, userId),
