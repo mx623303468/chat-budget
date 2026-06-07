@@ -5,7 +5,7 @@ import { hashPassword, verifyPassword } from '../lib/password'
 import { setAccessCookie, setRefreshCookie, clearCookies, getRefreshToken } from '../lib/cookie'
 import { authMiddleware } from '../middleware/auth'
 import { validateNickname, validateImageMagicBytes, MAX_AVATAR_SIZE, generateAvatarKey } from '../lib/upload'
-import { sendEmail, buildResetCodeHtml } from '../lib/email'
+import { sendEmail, buildResetCodeHtml, EmailSendError } from '../lib/email'
 
 const auth = new Hono<{ Bindings: Env; Variables: { userId: string } }>()
 
@@ -14,6 +14,11 @@ async function hashToken(token: string): Promise<string> {
   const data = encoder.encode(token)
   const hash = await crypto.subtle.digest('SHA-256', data)
   return [...new Uint8Array(hash)].map(b => b.toString(16).padStart(2, '0')).join('')
+}
+
+function isLocalRequest(url: string): boolean {
+  const hostname = new URL(url).hostname
+  return hostname === 'localhost' || hostname === '127.0.0.1'
 }
 
 auth.post('/register', async (c) => {
@@ -121,12 +126,44 @@ auth.post('/send-reset-code', async (c) => {
       'INSERT INTO password_reset_codes (email, code, expires_at, created_at) VALUES (?, ?, ?, ?)'
     ).bind(email, code, now + 5 * 60_000, now).run()
 
-    await sendEmail({
-      to: email,
-      subject: '修改密码验证码',
-      html: buildResetCodeHtml(code),
-      apiKey: c.env.RESEND_API_KEY,
-    })
+    try {
+      await sendEmail({
+        to: email,
+        subject: '修改密码验证码',
+        html: buildResetCodeHtml(code),
+        apiKey: c.env.RESEND_API_KEY,
+      })
+    } catch (error) {
+      await c.env.DB.prepare(
+        'DELETE FROM password_reset_codes WHERE email = ? AND code = ? AND created_at = ?'
+      ).bind(email, code, now).run().catch(() => {})
+
+      if (error instanceof EmailSendError) {
+        console.error('验证码邮件发送失败', {
+          to: email,
+          status: error.status,
+          responseText: error.responseText,
+        })
+
+        const body: { error: string; resend?: { message: string; status?: number; responseText?: string } } = {
+          error: '验证码邮件发送失败，请稍后重试',
+        }
+
+        if (isLocalRequest(c.req.url)) {
+          body.resend = {
+            message: error.message,
+            status: error.status,
+            responseText: error.responseText,
+          }
+        }
+
+        return c.json(body, 502)
+      } else {
+        console.error('验证码邮件发送异常', error)
+      }
+
+      return c.json({ error: '验证码邮件发送失败，请稍后重试' }, 502)
+    }
   }
 
   return c.json({ ok: true })
