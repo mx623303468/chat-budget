@@ -56,7 +56,6 @@ export function validateNickname(nickname: string): string | null {
   return trimmed
 }
 
-export function generateAvatarKey(userId: string): string {
-  const avatarId = crypto.randomUUID()
-  return `${userId}/${avatarId}.webp`
+export function generateAvatarKey(): string {
+  return `${crypto.randomUUID()}.webp`
 }

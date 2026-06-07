@@ -181,21 +181,23 @@ auth.patch('/profile', authMiddleware, async (c) => {
       'SELECT avatar FROM users WHERE id = ?'
     ).bind(userId).first<{ avatar: string | null }>()
 
-    newAvatarKey = generateAvatarKey(userId)
+    const avatarId = generateAvatarKey()
+    newAvatarKey = `${userId}/${avatarId}`
 
     const now = Date.now()
     await c.env.DB.batch([
       c.env.DB.prepare(
         'INSERT OR REPLACE INTO avatars (id, user_id, data, mime_type, created_at) VALUES (?, ?, ?, ?, ?)'
-      ).bind(newAvatarKey, userId, buffer, mimeType, now),
+      ).bind(avatarId, userId, buffer, mimeType, now),
       c.env.DB.prepare(
         'UPDATE users SET nickname = COALESCE(?, nickname), avatar = ?, updated_at = ? WHERE id = ?'
       ).bind(nickname ?? null, newAvatarKey, now, userId),
     ])
 
     if (oldUser?.avatar) {
+      const oldId = oldUser.avatar.split('/').pop()!
       await c.env.DB.prepare('DELETE FROM avatars WHERE user_id = ? AND id = ?')
-        .bind(userId, oldUser.avatar).run().catch(() => {})
+        .bind(userId, oldId).run().catch(() => {})
     }
   } else if (removeAvatar === 'true') {
     const oldUser = await c.env.DB.prepare(
@@ -208,8 +210,9 @@ auth.patch('/profile', authMiddleware, async (c) => {
     ).bind(nickname ?? null, now, userId).run()
 
     if (oldUser?.avatar) {
+      const oldId = oldUser.avatar.split('/').pop()!
       await c.env.DB.prepare('DELETE FROM avatars WHERE user_id = ? AND id = ?')
-        .bind(userId, oldUser.avatar).run().catch(() => {})
+        .bind(userId, oldId).run().catch(() => {})
     }
   } else {
     const now = Date.now()
