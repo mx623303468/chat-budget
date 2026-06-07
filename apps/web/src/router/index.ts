@@ -38,6 +38,12 @@ const router = createRouter({
       component: () => import('@/pages/RegisterPage.vue'),
       meta: { guest: true },
     },
+    {
+      path: '/forgot-password',
+      name: 'forgot-password',
+      component: () => import('@/pages/ForgotPassword.vue'),
+      meta: { guest: true },
+    },
   ],
 })
 

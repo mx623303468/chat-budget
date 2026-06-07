@@ -67,6 +67,12 @@ function goToRegister() {
           />
         </div>
 
+        <div class="flex justify-end">
+          <button class="text-xs text-primary hover:underline" @click="router.push({ name: 'forgot-password' })">
+            忘记密码？
+          </button>
+        </div>
+
         <p v-if="errorMsg" class="text-sm text-red-500">{{ errorMsg }}</p>
 
         <button
