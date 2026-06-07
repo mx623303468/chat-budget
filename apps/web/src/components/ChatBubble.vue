@@ -174,7 +174,7 @@ const trans = computed(() =>
           <!-- 气泡主体 -->
           <div
             class="pl-4 pr-4 py-2.5 shadow-sm shrink-0 transition-[border-radius] duration-300"
-            :class="isMine ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'"
+            :class="isMine ? 'bg-muted text-foreground' : 'bg-other text-foreground'"
             :style="{ minWidth: '60px', borderRadius: bubbleRadius }"
           >
             <div class="text-base font-medium tabular-nums leading-snug">
