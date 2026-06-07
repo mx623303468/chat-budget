@@ -152,6 +152,41 @@ async function request<T>(
   return res.json() as Promise<T>
 }
 
+async function uploadRequest<T>(
+  url: string,
+  formData: FormData,
+): Promise<T> {
+  const res = await fetch(url, {
+    method: 'PATCH',
+    credentials: 'include',
+    body: formData,
+  })
+
+  if (res.status === 401) {
+    const refreshed = await tryRefresh()
+    if (refreshed) {
+      const retryRes = await fetch(url, {
+        method: 'PATCH',
+        credentials: 'include',
+        body: formData,
+      })
+      if (retryRes.ok) {
+        return retryRes.json() as Promise<T>
+      }
+      const err: ApiError = await retryRes.json().catch(() => ({ error: '请求失败' }))
+      throw new ApiClientError(err.error, retryRes.status, err.code, err.latest)
+    }
+    throw new ApiClientError('登录已过期，请重新登录', 401)
+  }
+
+  if (!res.ok) {
+    const err: ApiError = await res.json().catch(() => ({ error: '请求失败' }))
+    throw new ApiClientError(err.error, res.status, err.code, err.latest)
+  }
+
+  return res.json() as Promise<T>
+}
+
 // ─── 自定义错误类 ───────────────────────────────────────────
 
 export class ApiClientError extends Error {
@@ -273,6 +308,7 @@ export const transactionsApi = {
       amount?: number
       note?: string
       date?: string
+      createdAt?: number
     },
   ): Promise<TransactionUpdateResponse> {
     return request(`/api/ledgers/${ledgerId}/transactions/${transactionId}`, {
@@ -332,4 +368,17 @@ export const membersApi = {
   leave(ledgerId: string): Promise<{ ok: boolean }> {
     return request(`/api/ledgers/${ledgerId}/members/me`, { method: 'DELETE' })
   },
+}
+
+// ─── Profile API ──────────────────────────────────────────
+
+export const profileApi = {
+  update(formData: FormData): Promise<AuthResponse> {
+    return uploadRequest('/api/auth/profile', formData)
+  },
+}
+
+export function getAvatarUrl(avatar: string | null): string | null {
+  if (!avatar) return null
+  return `/api/avatars/${avatar}`
 }

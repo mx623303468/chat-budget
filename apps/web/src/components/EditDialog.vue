@@ -19,11 +19,12 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:open': [value: boolean]
-  save: [id: string, data: { amount: number; note: string }]
+  save: [id: string, data: { amount: number; note: string; createdAt?: number }]
 }>()
 
 const amountStr = ref('')
 const noteStr = ref('')
+const createdAtStr = ref('')
 
 watch(
   () => props.transaction,
@@ -31,6 +32,8 @@ watch(
     if (t) {
       amountStr.value = fenToYuan(t.amount)
       noteStr.value = t.note
+      const d = new Date(t.createdAt)
+      createdAtStr.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}T${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
     }
   },
 )
@@ -40,7 +43,14 @@ function handleSave() {
   const yuan = parseFloat(amountStr.value)
   if (Number.isNaN(yuan) || yuan <= 0) return
   const fen = Math.round(yuan * 100)
-  emit('save', props.transaction.id, { amount: fen, note: noteStr.value || '未命名' })
+  const data: { amount: number; note: string; createdAt?: number } = {
+    amount: fen,
+    note: noteStr.value || '未命名',
+  }
+  if (createdAtStr.value) {
+    data.createdAt = new Date(createdAtStr.value).getTime()
+  }
+  emit('save', props.transaction.id, data)
   emit('update:open', false)
 }
 </script>
@@ -50,10 +60,6 @@ function handleSave() {
     <DialogContent class="sm:max-w-[360px]">
       <DialogHeader>
         <DialogTitle>编辑记录</DialogTitle>
-        <button
-          class="absolute right-4 top-4 text-muted-foreground hover:text-foreground transition-colors"
-          @click="emit('update:open', false)"
-        ></button>
       </DialogHeader>
       <div class="grid gap-3 py-2">
         <div>
@@ -63,6 +69,10 @@ function handleSave() {
         <div>
           <label class="text-sm text-muted-foreground mb-1 block">说明</label>
           <Input v-model="noteStr" placeholder="说明" />
+        </div>
+        <div>
+          <label class="text-sm text-muted-foreground mb-1 block">时间</label>
+          <Input v-model="createdAtStr" type="datetime-local" />
         </div>
       </div>
       <DialogFooter>

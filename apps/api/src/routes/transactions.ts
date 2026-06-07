@@ -182,6 +182,7 @@ transactions.put('/:tid', async (c) => {
     amount?: number
     note?: string
     date?: string
+    createdAt?: number
   }>()
 
   try {
@@ -224,17 +225,18 @@ transactions.put('/:tid', async (c) => {
   const newVersion = (tx.version as number) + 1
   const newAmount = body.amount ?? tx.amount
   const newNote = body.note ?? tx.note
-  const newDate = body.date ?? tx.date
+  const newCreatedAt = body.createdAt ?? tx.created_at
+  const newDate = body.date ?? (body.createdAt ? `${new Date(body.createdAt).getFullYear()}-${String(new Date(body.createdAt).getMonth() + 1).padStart(2, '0')}-${String(new Date(body.createdAt).getDate()).padStart(2, '0')}` : tx.date)
 
   const responsePayload = { id: transactionId, version: newVersion }
 
   await c.env.DB.batch([
     c.env.DB.prepare(
-      'UPDATE transactions SET amount = ?, note = ?, date = ?, updated_at = ?, updated_by = ?, version = ? WHERE id = ?'
-    ).bind(newAmount, newNote, newDate, now, userId, newVersion, transactionId),
+      'UPDATE transactions SET amount = ?, note = ?, date = ?, created_at = ?, updated_at = ?, updated_by = ?, version = ? WHERE id = ?'
+    ).bind(newAmount, newNote, newDate, newCreatedAt, now, userId, newVersion, transactionId),
     c.env.DB.prepare(
       'INSERT INTO ledger_events (ledger_id, type, entity_type, entity_id, actor_user_id, client_mutation_id, payload, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-    ).bind(ledgerId, 'transaction_updated', 'transaction', transactionId, userId, body.clientMutationId, buildTransactionPayloadFromFields(transactionId, ledgerId, tx.user_id as string, newAmount as number, newNote as string, newDate as string, tx.created_at as number, now, null, tx.created_by as string, userId, null, newVersion), now),
+    ).bind(ledgerId, 'transaction_updated', 'transaction', transactionId, userId, body.clientMutationId, buildTransactionPayloadFromFields(transactionId, ledgerId, tx.user_id as string, newAmount as number, newNote as string, newDate as string, newCreatedAt as number, now, null, tx.created_by as string, userId, null, newVersion), now),
     c.env.DB.prepare(
       'INSERT INTO client_mutations (id, ledger_id, user_id, operation_type, entity_type, entity_id, status, response_payload, expires_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
     ).bind(body.clientMutationId, ledgerId, userId, 'update_transaction', 'transaction', transactionId, 'completed', JSON.stringify(responsePayload), now + 30 * 24 * 60 * 60 * 1000, now),
@@ -249,7 +251,7 @@ transactions.put('/:tid', async (c) => {
       actorUserId: userId,
       clientMutationId: body.clientMutationId,
       occurredAt: now,
-      payload: { transaction: { id: transactionId, ledgerId, userId: tx.user_id as string, amount: newAmount as number, note: newNote as string, date: newDate as string, createdAt: tx.created_at as number, updatedAt: now, deletedAt: null, createdBy: tx.created_by as string, updatedBy: userId, deletedBy: null, version: newVersion } },
+      payload: { transaction: { id: transactionId, ledgerId, userId: tx.user_id as string, amount: newAmount as number, note: newNote as string, date: newDate as string, createdAt: newCreatedAt as number, updatedAt: now, deletedAt: null, createdBy: tx.created_by as string, updatedBy: userId, deletedBy: null, version: newVersion } },
     })
   )
 

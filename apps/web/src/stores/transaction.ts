@@ -118,7 +118,7 @@ export const useTransactionStore = defineStore('transaction', () => {
   async function updateTransaction(
     ledgerId: string,
     transactionId: string,
-    data: { amount?: number; note?: string },
+    data: { amount?: number; note?: string; createdAt?: number },
   ): Promise<void> {
     const existing = transactions.value.find((t) => t.id === transactionId)
     if (!existing) return
@@ -130,11 +130,19 @@ export const useTransactionStore = defineStore('transaction', () => {
       ...data,
     })
 
-    transactions.value = transactions.value.map((t) =>
-      t.id === transactionId
-        ? { ...t, ...data, version: res.version, updatedAt: Date.now() }
-        : t,
-    )
+    transactions.value = transactions.value.map((t) => {
+      if (t.id !== transactionId) return t
+      const newCreatedAt = data.createdAt ?? t.createdAt
+      const newDate = new Date(newCreatedAt)
+      const dateStr = `${newDate.getFullYear()}-${String(newDate.getMonth() + 1).padStart(2, '0')}-${String(newDate.getDate()).padStart(2, '0')}`
+      return {
+        ...t,
+        ...data,
+        date: data.createdAt ? dateStr : t.date,
+        version: res.version,
+        updatedAt: Date.now(),
+      }
+    })
   }
 
   const todaySpend = computed(() => calcTodaySpend(transactions.value))

@@ -89,7 +89,7 @@ function onEdit(transaction: Transaction) {
   editOpen.value = true
 }
 
-async function onSaveEdit(id: string, data: { amount: number; note: string }) {
+async function onSaveEdit(id: string, data: { amount: number; note: string; createdAt?: number }) {
   await transactionStore.updateTransaction(ledgerId, id, data)
 }
 
