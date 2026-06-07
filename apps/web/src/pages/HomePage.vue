@@ -41,7 +41,7 @@ async function fetchMembers() {
     const res = await membersApi.list(ledgerId)
     const map: MemberMap = {}
     for (const m of res.members) {
-      map[m.userId] = { nickname: m.nickname, avatar: null }
+      map[m.userId] = { nickname: m.nickname, avatar: m.avatar }
     }
     if (authStore.user) {
       map[authStore.user.id] = {

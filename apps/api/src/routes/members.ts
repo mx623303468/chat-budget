@@ -9,6 +9,7 @@ function mapMember(row: MemberRow) {
   return {
     userId: row.user_id,
     nickname: row.nickname,
+    avatar: row.avatar,
     role: row.role,
     joinedAt: row.joined_at,
     removedAt: row.removed_at,

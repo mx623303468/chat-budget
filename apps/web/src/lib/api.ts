@@ -67,6 +67,7 @@ export type MembersResponse = {
   members: Array<{
     userId: string
     nickname: string
+    avatar: string | null
     role: string
     joinedAt: number
     removedAt: number | null
