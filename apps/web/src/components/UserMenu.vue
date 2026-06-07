@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { ChevronDown, UserPen, Users, LogOut } from 'lucide-vue-next'
+import { ChevronDown, UserPen, Users, KeyRound, LogOut } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
 import UserAvatar from '@/components/UserAvatar.vue'
 import ProfileDialog from '@/components/ProfileDialog.vue'
+import ChangePasswordDialog from '@/components/ChangePasswordDialog.vue'
 
 const router = useRouter()
 const emit = defineEmits<{
@@ -14,6 +15,7 @@ const emit = defineEmits<{
 const auth = useAuthStore()
 const open = ref(false)
 const showProfile = ref(false)
+const showChangePassword = ref(false)
 
 function toggle() {
   open.value = !open.value
@@ -26,6 +28,11 @@ function close() {
 function openProfile() {
   close()
   showProfile.value = true
+}
+
+function openChangePassword() {
+  close()
+  showChangePassword.value = true
 }
 
 function goJoin() {
@@ -102,6 +109,13 @@ function onBackdropClick() {
             加入账本
           </button>
           <button
+            class="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-muted/50 transition-colors"
+            @click="openChangePassword"
+          >
+            <KeyRound :size="15" class="text-muted-foreground" />
+            修改密码
+          </button>
+          <button
             class="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-muted/50 transition-colors text-destructive"
             @click="handleLogout"
           >
@@ -113,5 +127,6 @@ function onBackdropClick() {
     </Transition>
 
     <ProfileDialog v-model:open="showProfile" />
+    <ChangePasswordDialog v-model:open="showChangePassword" />
   </div>
 </template>
