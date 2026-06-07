@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import type { Transaction } from '@/types'
 import { fenToYuan } from '@/lib/input-parser'
 import { toDateStr } from '@/lib/date-utils'
+import UserAvatar from '@/components/UserAvatar.vue'
 
 const props = defineProps<{
   transaction: Transaction
@@ -26,23 +27,6 @@ const timeStr = computed(() => {
   const hhmm = d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
   return props.transaction.date === toDateStr(new Date()) ? `今天 ${hhmm}` : hhmm
 })
-
-// --- 头像颜色 ---
-const AVATAR_COLORS = [
-  '#7EBAD7', '#F0B96A', '#E07B7B', '#8BC58B', '#C49ADB',
-  '#6BB8C4', '#D4A45A', '#B07B9E', '#7BAFB0', '#C4946B',
-]
-
-function avatarColor(name: string): string {
-  let hash = 0
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash)
-  }
-  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]!
-}
-
-const initial = computed(() => props.nickname?.charAt(0) ?? '?')
-const avatarBg = computed(() => avatarColor(props.nickname ?? ''))
 
 // --- 气泡圆角 ---
 const bubbleRadius = computed(() => {
@@ -68,6 +52,7 @@ let moved = false
 
 function onTouchStart(e: TouchEvent) {
   e.stopPropagation()
+  if (!props.isMine) return
 
   const target = e.target as HTMLElement
   if (target.closest('[data-delete-area]')) return
@@ -89,6 +74,7 @@ function onTouchStart(e: TouchEvent) {
 }
 
 function onTouchMove(e: TouchEvent) {
+  if (!props.isMine) return
   const t = e.touches[0]
   if (!t) return
   const dx = t.clientX - startX
@@ -165,19 +151,7 @@ const trans = computed(() =>
     <div class="flex items-end gap-2" :class="isMine ? 'justify-end' : 'justify-start'">
       <!-- 左侧头像（他人） -->
       <div v-if="!isMine && showAvatar" class="shrink-0 pb-5">
-        <img
-          v-if="avatar"
-          :src="avatar"
-          :alt="nickname"
-          class="w-8 h-8 rounded-full object-cover"
-        />
-        <div
-          v-else
-          class="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium"
-          :style="{ backgroundColor: avatarBg }"
-        >
-          {{ initial }}
-        </div>
+        <UserAvatar :avatar="avatar" :nickname="nickname ?? ''" :size="32" />
       </div>
       <!-- 占位（他人连续消息不显示头像时保持间距） -->
       <div v-else-if="!isMine" class="w-8 shrink-0" />
@@ -232,19 +206,7 @@ const trans = computed(() =>
 
       <!-- 右侧头像（自己） -->
       <div v-if="isMine && showAvatar" class="shrink-0 pb-5">
-        <img
-          v-if="avatar"
-          :src="avatar"
-          :alt="nickname"
-          class="w-8 h-8 rounded-full object-cover"
-        />
-        <div
-          v-else
-          class="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium"
-          :style="{ backgroundColor: avatarBg }"
-        >
-          {{ initial }}
-        </div>
+        <UserAvatar :avatar="avatar" :nickname="nickname ?? ''" :size="32" />
       </div>
       <!-- 占位（自己连续消息不显示头像时保持间距） -->
       <div v-else-if="isMine" class="w-8 shrink-0" />
