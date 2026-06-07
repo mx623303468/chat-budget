@@ -236,6 +236,20 @@ export const authApi = {
       method: 'POST',
     })
   },
+
+  sendResetCode(data: { email: string }): Promise<{ ok: boolean }> {
+    return request('/api/auth/send-reset-code', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  },
+
+  resetPassword(data: { email: string; code: string; newPassword: string }): Promise<{ ok: boolean }> {
+    return request('/api/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  },
 }
 
 // ─── Ledgers API ────────────────────────────────────────────
