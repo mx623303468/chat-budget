@@ -25,7 +25,14 @@ const route = useRoute()
 const router = useRouter()
 const ledgersStore = useLedgersStore()
 const transactionStore = useTransactionStore()
-const { syncState, connect: connectWs, disconnect: disconnectWs } = useRealtimeSync()
+const { syncState, connect: connectWs, disconnect: disconnectWs } = useRealtimeSync({
+  onProfileUpdate(data) {
+    const entry = memberMap.value[data.userId]
+    if (entry) {
+      memberMap.value[data.userId] = { ...entry, nickname: data.nickname, avatar: data.avatar }
+    }
+  },
+})
 
 const currentView = ref<ViewName>('home')
 const editOpen = ref(false)

@@ -10,7 +10,9 @@ const MAX_RETRIES = 10
 const BASE_DELAY = 1000
 const MAX_DELAY = 30000
 
-export function useRealtimeSync() {
+export function useRealtimeSync(options?: {
+  onProfileUpdate?: (data: { userId: string; nickname: string; avatar: string | null }) => void
+}) {
   const syncState = ref<SyncState>('disconnected')
   let ws: WebSocket | null = null
   let retryCount = 0
@@ -133,6 +135,11 @@ export function useRealtimeSync() {
       }
       case 'ledger_deleted': {
         ledgersStore.handleRemoteLedgerDelete(currentLedgerId!)
+        break
+      }
+      case 'profile_updated': {
+        const data = msg.payload as { userId: string; nickname: string; avatar: string | null }
+        options?.onProfileUpdate?.(data)
         break
       }
     }

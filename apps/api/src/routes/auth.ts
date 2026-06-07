@@ -4,6 +4,7 @@ import { signAccessToken, signRefreshToken, verifyToken } from '../lib/jwt'
 import { hashPassword, verifyPassword } from '../lib/password'
 import { setAccessCookie, setRefreshCookie, clearCookies, getRefreshToken } from '../lib/cookie'
 import { authMiddleware } from '../middleware/auth'
+import { validateNickname, validateImageMagicBytes, MAX_AVATAR_SIZE, generateAvatarKey } from '../lib/upload'
 
 const auth = new Hono<{ Bindings: Env; Variables: { userId: string } }>()
 
@@ -141,6 +142,109 @@ auth.post('/logout', authMiddleware, async (c) => {
 
   clearCookies(c)
   return c.json({ ok: true })
+})
+
+auth.patch('/profile', authMiddleware, async (c) => {
+  const userId = c.get('userId')
+
+  const formData = await c.req.formData()
+  const nicknameRaw = formData.get('nickname') as string | null
+  const avatarFile = formData.get('avatar') as File | null
+  const removeAvatar = formData.get('removeAvatar') as string | null
+
+  if (!nicknameRaw && !avatarFile && removeAvatar !== 'true') {
+    return c.json({ error: '没有需要更新的字段' }, 400)
+  }
+
+  let nickname: string | undefined
+  if (nicknameRaw !== null) {
+    nickname = validateNickname(nicknameRaw)
+    if (!nickname) {
+      return c.json({ error: '昵称长度需在 1-20 之间，且不能包含特殊字符' }, 400)
+    }
+  }
+
+  let newAvatarKey: string | undefined
+
+  if (avatarFile) {
+    if (avatarFile.size > MAX_AVATAR_SIZE) {
+      return c.json({ error: '头像文件不能超过 2MB' }, 400)
+    }
+
+    const buffer = await avatarFile.arrayBuffer()
+    const mimeType = validateImageMagicBytes(buffer)
+    if (!mimeType) {
+      return c.json({ error: '仅支持 JPG、PNG、WebP 格式的图片' }, 400)
+    }
+
+    const oldUser = await c.env.DB.prepare(
+      'SELECT avatar FROM users WHERE id = ?'
+    ).bind(userId).first<{ avatar: string | null }>()
+
+    newAvatarKey = generateAvatarKey(userId)
+
+    await c.env.AVATARS.put(`avatars/${newAvatarKey}`, buffer, {
+      httpMetadata: { contentType: mimeType },
+    })
+
+    const now = Date.now()
+    await c.env.DB.prepare(
+      'UPDATE users SET nickname = COALESCE(?, nickname), avatar = ?, updated_at = ? WHERE id = ?'
+    ).bind(nickname ?? null, newAvatarKey, now, userId).run()
+
+    if (oldUser?.avatar) {
+      await c.env.AVATARS.delete(`avatars/${oldUser.avatar}`).catch(() => {})
+    }
+  } else if (removeAvatar === 'true') {
+    const oldUser = await c.env.DB.prepare(
+      'SELECT avatar FROM users WHERE id = ?'
+    ).bind(userId).first<{ avatar: string | null }>()
+
+    const now = Date.now()
+    await c.env.DB.prepare(
+      'UPDATE users SET nickname = COALESCE(?, nickname), avatar = NULL, updated_at = ? WHERE id = ?'
+    ).bind(nickname ?? null, now, userId).run()
+
+    if (oldUser?.avatar) {
+      await c.env.AVATARS.delete(`avatars/${oldUser.avatar}`).catch(() => {})
+    }
+  } else {
+    const now = Date.now()
+    await c.env.DB.prepare(
+      'UPDATE users SET nickname = ?, updated_at = ? WHERE id = ?'
+    ).bind(nickname!, now, userId).run()
+  }
+
+  const user = await c.env.DB.prepare(
+    'SELECT id, email, nickname, avatar, created_at, updated_at FROM users WHERE id = ?'
+  ).bind(userId).first()
+
+  // 广播个人资料更新到所有加入的账本
+  const memberships = await c.env.DB.prepare(
+    'SELECT ledger_id FROM ledger_members WHERE user_id = ? AND removed_at IS NULL'
+  ).bind(userId).all()
+
+  const event = {
+    type: 'profile_updated',
+    ledgerId: '',
+    eventId: 0,
+    entityId: userId,
+    actorUserId: userId,
+    occurredAt: Date.now(),
+    payload: { userId, nickname: (user as any).nickname, avatar: (user as any).avatar },
+  }
+
+  for (const m of memberships.results as { ledger_id: string }[]) {
+    const id = c.env.SYNC_DO.idFromName(m.ledger_id)
+    const stub = c.env.SYNC_DO.get(id)
+    await stub.fetch(new Request('https://do/broadcast', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ event, excludeUserId: userId }),
+    })).catch(() => {})
+  }
+
+  return c.json({ user })
 })
 
 auth.get('/me', authMiddleware, async (c) => {
