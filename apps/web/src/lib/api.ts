@@ -380,5 +380,6 @@ export const profileApi = {
 
 export function getAvatarUrl(avatar: string | null): string | null {
   if (!avatar) return null
+  if (avatar.startsWith('blob:') || avatar.startsWith('data:')) return avatar
   return `/api/avatars/${avatar}`
 }
