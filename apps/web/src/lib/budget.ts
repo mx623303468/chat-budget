@@ -1,7 +1,8 @@
 import type { Settings, Transaction } from '@/types'
+import { toDateStr } from '@/lib/date-utils'
 
 export function getTodayStr(): string {
-  return new Date().toISOString().slice(0, 10)
+  return toDateStr(new Date())
 }
 
 /**

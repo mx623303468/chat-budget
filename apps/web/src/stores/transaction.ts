@@ -130,7 +130,7 @@ export const useTransactionStore = defineStore('transaction', () => {
       ...data,
     })
 
-    transactions.value = transactions.value.map((t) => {
+    const updated = transactions.value.map((t) => {
       if (t.id !== transactionId) return t
       const newCreatedAt = data.createdAt ?? t.createdAt
       const newDate = new Date(newCreatedAt)
@@ -143,6 +143,8 @@ export const useTransactionStore = defineStore('transaction', () => {
         updatedAt: Date.now(),
       }
     })
+    updated.sort((a, b) => a.createdAt - b.createdAt)
+    transactions.value = updated
   }
 
   const todaySpend = computed(() => calcTodaySpend(transactions.value))
@@ -173,9 +175,11 @@ export const useTransactionStore = defineStore('transaction', () => {
   }
 
   function handleRemoteUpdate(tx: Transaction): void {
-    transactions.value = transactions.value.map((t) =>
+    const list = transactions.value.map((t) =>
       t.id === tx.id ? tx : t,
     )
+    list.sort((a, b) => a.createdAt - b.createdAt)
+    transactions.value = list
   }
 
   function handleRemoteDelete(transactionId: string): void {

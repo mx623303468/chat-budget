@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import { authApi, ApiClientError } from '@/lib/api'
+import { authApi, profileApi, ApiClientError } from '@/lib/api'
 import type { User } from '@chat-budget/shared'
 
 export const useAuthStore = defineStore('auth', () => {
@@ -82,6 +82,26 @@ export const useAuthStore = defineStore('auth', () => {
     return !isLoggedIn.value
   }
 
+  async function updateProfile(data: {
+    nickname?: string
+    avatar?: Blob
+    removeAvatar?: boolean
+  }): Promise<void> {
+    const formData = new FormData()
+    if (data.nickname !== undefined) {
+      formData.set('nickname', data.nickname)
+    }
+    if (data.avatar) {
+      formData.set('avatar', data.avatar, 'avatar.webp')
+    }
+    if (data.removeAvatar) {
+      formData.set('removeAvatar', 'true')
+    }
+
+    const res = await profileApi.update(formData)
+    user.value = res.user
+  }
+
   return {
     user,
     loading,
@@ -92,5 +112,6 @@ export const useAuthStore = defineStore('auth', () => {
     login,
     logout,
     requireLogin,
+    updateProfile,
   }
 })

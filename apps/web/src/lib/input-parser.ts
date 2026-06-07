@@ -9,7 +9,7 @@ export function normalize(input: string): string {
       String.fromCharCode(s.charCodeAt(0) - 65248),
     )
     .replace(/[．。]/g, '.')
-    .replace(/^(\d+\.?\d*)([^\s\d]+)/, '$1 $2')
+    .replace(/^(\d+(?:\.\d+)?)([^\s\d.]+)/, '$1 $2')
     .replace(/^([^\d]+)(\d+\.?\d*)/, '$2 $1')
     .replace(/\s+/g, ' ')
     .trim()

@@ -8,6 +8,7 @@ import members from './routes/members'
 import invites from './routes/invites'
 import transactions from './routes/transactions'
 import events from './routes/events'
+import avatars from './routes/avatars'
 import { SyncDO } from './do/sync'
 
 const app = new Hono<{ Bindings: Env; Variables: { userId: string } }>()
@@ -17,6 +18,7 @@ app.get('/api/health', (c) => {
 })
 
 app.route('/api/auth', auth)
+app.route('/api/avatars', avatars)
 app.route('/api/ledgers', ledgers)
 app.route('/api/ledgers/:id/members', members)
 app.route('/api/ledgers/:id/transactions', transactions)

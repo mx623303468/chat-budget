@@ -4,6 +4,7 @@ import { ArrowLeft, TrendingUp, TrendingDown, Clock, Wallet } from 'lucide-vue-n
 import { useTransactionStore } from '@/stores/transaction'
 import { useLedgersStore } from '@/stores/ledgers'
 import { fenToYuan } from '@/lib/input-parser'
+import { toDateStr } from '@/lib/date-utils'
 import { Separator } from '@/components/ui/separator'
 
 defineProps<{
@@ -26,7 +27,7 @@ const ledger = computed(() => ledgersStore.currentLedger)
 const totalDays = computed(() => {
   if (!ledger.value?.startDate) return 0
   const start = new Date(ledger.value.startDate)
-  const today = new Date(new Date().toISOString().slice(0, 10))
+  const today = new Date(toDateStr(new Date()))
   const diff = Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
   return Math.max(diff, 0)
 })
@@ -47,7 +48,7 @@ const dailyStats = computed(() => {
   for (let i = 6; i >= 0; i--) {
     const d = new Date(today)
     d.setDate(d.getDate() - i)
-    const key = d.toISOString().slice(0, 10)
+    const key = toDateStr(d)
     map.set(key, 0)
   }
 
@@ -65,7 +66,7 @@ const dailyStats = computed(() => {
     label: date.slice(5),
     amountYuan: fenToYuan(amount),
     percent: Math.round((amount / maxAmount) * 100),
-    isToday: date === new Date().toISOString().slice(0, 10),
+    isToday: date === toDateStr(new Date()),
   }))
 })
 
