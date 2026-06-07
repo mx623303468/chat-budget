@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Plus, Users, LogOut } from 'lucide-vue-next'
+import { Plus } from 'lucide-vue-next'
 import { useLedgersStore } from '@/stores/ledgers'
 import { useAuthStore } from '@/stores/auth'
+import { toDateStr } from '@/lib/date-utils'
 import { Button } from '@/components/ui/button'
+import UserMenu from '@/components/UserMenu.vue'
 import { Input } from '@/components/ui/input'
 import {
   Dialog,
@@ -21,7 +23,7 @@ const auth = useAuthStore()
 const showCreateDialog = ref(false)
 const newLedgerName = ref('')
 const newDailyLimit = ref('')
-const newStartDate = ref(new Date().toISOString().slice(0, 10))
+const newStartDate = ref(toDateStr(new Date()))
 
 onMounted(async () => {
   await ledgersStore.fetchLedgers()
@@ -51,10 +53,6 @@ async function handleCreate() {
   openLedger(ledger.id)
 }
 
-function goJoin() {
-  router.push({ name: 'join' })
-}
-
 async function handleLogout() {
   await auth.logout()
   router.replace({ name: 'login' })
@@ -71,17 +69,9 @@ function formatDate(ts: number): string {
     <div class="flex items-center justify-between px-4 py-3 border-b">
       <div>
         <h1 class="text-lg font-medium">我的账本</h1>
-        <p v-if="auth.user" class="text-xs text-muted-foreground">
-          {{ auth.user.nickname }}
-        </p>
       </div>
       <div class="flex items-center gap-1">
-        <Button variant="ghost" size="icon" title="加入账本" @click="goJoin">
-          <Users :size="18" />
-        </Button>
-        <Button variant="ghost" size="icon" title="退出登录" @click="handleLogout">
-          <LogOut :size="18" />
-        </Button>
+        <UserMenu @logout="handleLogout" />
       </div>
     </div>
 
