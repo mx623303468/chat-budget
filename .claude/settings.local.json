@@ -20,7 +20,26 @@
       "mcp__plugin_chrome-devtools-mcp_chrome-devtools__type_text",
       "mcp__plugin_chrome-devtools-mcp_chrome-devtools__emulate",
       "Bash(npx vue-tsc:*)",
-      "Bash(npx vite:*)"
-    ]
+      "Bash(npx vite:*)",
+      "WebSearch",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git mv *)",
+      "Bash(mkdir -p apps/web)",
+      "Bash(mv apps/web_temp_src apps/web/src)",
+      "Bash(pnpm approve-builds *)",
+      "Bash(pnpm config *)",
+      "Bash(pnpm install *)",
+      "Bash(npx tsc *)",
+      "Bash(curl *)",
+      "Bash(taskkill //F //IM wrangler.exe)",
+      "Bash(npx wrangler *)",
+      "Bash(netstat -ano)",
+      "Bash(taskkill //F //IM node.exe)",
+      "Bash(head -5 \"node_modules/.pnpm/@cloudflare+workers-types@4.20260531.1/node_modules/@cloudflare/workers-types/index.d.ts\")",
+      "Bash(head -5 \"apps/api/node_modules/@cloudflare/workers-types/index.d.ts\")",
+      "Bash(git rm *)"
+    ],
+    "defaultMode": "bypassPermissions"
   }
 }

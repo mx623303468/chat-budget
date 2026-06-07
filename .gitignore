@@ -37,3 +37,13 @@ __screenshots__/
 
 # Vite
 *.timestamp-*-*.mjs
+apps/api/.wrangler/
+apps/api/.dev.vars
+apps/api/dist/
+
+# Superpowers brainstorming
+.superpowers/
+
+# Windows crash dumps
+bash.exe.stackdump
+.superpowers/
