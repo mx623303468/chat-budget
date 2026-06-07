@@ -34,8 +34,8 @@ export function validateImageMagicBytes(buffer: ArrayBuffer): 'image/jpeg' | 'im
   return null
 }
 
-/** 文件大小限制 2MB */
-export const MAX_AVATAR_SIZE = 2 * 1024 * 1024
+/** 文件大小限制 700KB（base64 后不超过 D1 的 1MB 上限） */
+export const MAX_AVATAR_SIZE = 700 * 1024
 
 const SAFE_SEGMENT = /^[a-zA-Z0-9_.-]+$/
 

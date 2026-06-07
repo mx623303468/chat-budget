@@ -54,8 +54,8 @@ function handleFileSelect(e: Event) {
   const file = input.files?.[0]
   if (!file) return
 
-  if (file.size > 10 * 1024 * 1024) {
-    error.value = '图片文件过大，请选择 10MB 以内的图片'
+  if (file.size > 700 * 1024) {
+    error.value = '图片文件过大，请选择 700KB 以内的图片'
     return
   }
   if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
