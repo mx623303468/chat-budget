@@ -85,25 +85,18 @@ function onTouchMove(e: TouchEvent) {
     moved = true
   }
 
-  const openDir: number = props.isMine !== false ? -1 : 1
-
-  if (dx * openDir > 4 && Math.abs(dx) > Math.abs(dy)) {
+  if (!isOpen.value && dx < -4 && Math.abs(dx) > Math.abs(dy)) {
     e.preventDefault()
     swiping.value = true
-    const base = isOpen.value ? DELETE_W * openDir : 0
-    const raw = base + dx
     const maxSwipe = DELETE_W + 10
-    swipeX.value = props.isMine !== false
-      ? Math.max(raw, -maxSwipe)
-      : Math.min(raw, maxSwipe)
+    swipeX.value = Math.max(dx, -maxSwipe)
   }
 
-  if (isOpen.value && dx * (-openDir) > 4 && Math.abs(dx) > Math.abs(dy)) {
+  if (isOpen.value && dx > 4 && Math.abs(dx) > Math.abs(dy)) {
     e.preventDefault()
     swiping.value = true
-    swipeX.value = props.isMine !== false
-      ? Math.min(dx, 0)
-      : Math.max(dx, 0)
+    swipeX.value = Math.max(-DELETE_W + dx, -DELETE_W)
+    swipeX.value = Math.min(swipeX.value, 0)
   }
 }
 
@@ -113,24 +106,36 @@ function onTouchEnd(e: TouchEvent) {
   swiping.value = false
 
   if (Math.abs(swipeX.value) > DELETE_W * 0.4) {
-    swipeX.value = props.isMine !== false ? -DELETE_W : DELETE_W
+    swipeX.value = -DELETE_W
     isOpen.value = true
   } else {
     close()
   }
 }
 
-function close() {
-  swipeX.value = 0
-  isOpen.value = false
-}
-
 function cancelLP() {
   if (lpTimer) { clearTimeout(lpTimer); lpTimer = null }
 }
 
+const confirmDelete = ref(false)
+
 function onDeleteClick() {
+  confirmDelete.value = true
+}
+
+function onConfirmDelete() {
+  confirmDelete.value = false
   emit('delete', props.transaction.id)
+}
+
+function onCancelDelete() {
+  confirmDelete.value = false
+  close()
+}
+
+function close() {
+  swipeX.value = 0
+  isOpen.value = false
 }
 
 const trans = computed(() =>
@@ -140,20 +145,17 @@ const trans = computed(() =>
 
 <template>
   <div class="mb-1" :class="{ 'animate-bubble-in': animate !== false }">
-    <!-- 昵称（仅他人且 showNickname 时显示） -->
-    <div
-      v-if="!isMine && showNickname && nickname"
-      class="text-[11px] text-muted-foreground mb-0.5 pl-10"
-    >
-      {{ nickname }}
-    </div>
-
     <div class="flex items-end gap-2" :class="isMine ? 'justify-end' : 'justify-start'">
-      <!-- 左侧头像（他人） -->
-      <div v-if="!isMine && showAvatar" class="shrink-0 pb-5">
+      <!-- 左侧头像+昵称（他人） -->
+      <div v-if="!isMine && showAvatar" class="shrink-0 pb-5 flex flex-col items-center gap-0.5">
         <UserAvatar :avatar="avatar" :nickname="nickname ?? ''" :size="32" />
+        <span v-if="showNickname && nickname" class="text-[10px] text-muted-foreground max-w-[40px] truncate">{{ nickname }}</span>
       </div>
       <!-- 占位（他人连续消息不显示头像时保持间距） -->
+      <div v-else-if="!isMine && showNickname && nickname" class="w-8 shrink-0 flex flex-col items-center">
+        <div class="w-8 h-8" />
+        <span class="text-[10px] text-muted-foreground max-w-[40px] truncate">{{ nickname }}</span>
+      </div>
       <div v-else-if="!isMine" class="w-8 shrink-0" />
 
       <!-- 气泡滑动区域 -->
@@ -203,6 +205,22 @@ const trans = computed(() =>
           </div>
         </div>
       </div>
+
+      <!-- 删除确认弹窗 -->
+      <Teleport to="body">
+        <div v-if="confirmDelete" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40" @click.self="onCancelDelete">
+          <div class="bg-popover rounded-xl shadow-lg w-72 overflow-hidden">
+            <div class="px-5 pt-5 pb-3 text-center">
+              <div class="text-base font-medium">确认删除</div>
+              <div class="text-sm text-muted-foreground mt-1.5">删除后无法恢复，确定要删除这条记录吗？</div>
+            </div>
+            <div class="flex border-t">
+              <button class="flex-1 py-3 text-sm hover:bg-muted/50 transition-colors" @click="onCancelDelete">取消</button>
+              <button class="flex-1 py-3 text-sm text-destructive font-medium border-l hover:bg-muted/50 transition-colors" @click="onConfirmDelete">删除</button>
+            </div>
+          </div>
+        </div>
+      </Teleport>
 
       <!-- 右侧头像（自己） -->
       <div v-if="isMine && showAvatar" class="shrink-0 pb-5">
