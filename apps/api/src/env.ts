@@ -4,5 +4,4 @@ export type Env = {
   REFRESH_SECRET: string
   ENVIRONMENT: string
   SYNC_DO: DurableObjectNamespace
-  AVATARS: R2Bucket
 }

@@ -183,17 +183,19 @@ auth.patch('/profile', authMiddleware, async (c) => {
 
     newAvatarKey = generateAvatarKey(userId)
 
-    await c.env.AVATARS.put(`avatars/${newAvatarKey}`, buffer, {
-      httpMetadata: { contentType: mimeType },
-    })
-
     const now = Date.now()
-    await c.env.DB.prepare(
-      'UPDATE users SET nickname = COALESCE(?, nickname), avatar = ?, updated_at = ? WHERE id = ?'
-    ).bind(nickname ?? null, newAvatarKey, now, userId).run()
+    await c.env.DB.batch([
+      c.env.DB.prepare(
+        'INSERT OR REPLACE INTO avatars (id, user_id, data, mime_type, created_at) VALUES (?, ?, ?, ?, ?)'
+      ).bind(newAvatarKey, userId, buffer, mimeType, now),
+      c.env.DB.prepare(
+        'UPDATE users SET nickname = COALESCE(?, nickname), avatar = ?, updated_at = ? WHERE id = ?'
+      ).bind(nickname ?? null, newAvatarKey, now, userId),
+    ])
 
     if (oldUser?.avatar) {
-      await c.env.AVATARS.delete(`avatars/${oldUser.avatar}`).catch(() => {})
+      await c.env.DB.prepare('DELETE FROM avatars WHERE user_id = ? AND id = ?')
+        .bind(userId, oldUser.avatar).run().catch(() => {})
     }
   } else if (removeAvatar === 'true') {
     const oldUser = await c.env.DB.prepare(
@@ -206,7 +208,8 @@ auth.patch('/profile', authMiddleware, async (c) => {
     ).bind(nickname ?? null, now, userId).run()
 
     if (oldUser?.avatar) {
-      await c.env.AVATARS.delete(`avatars/${oldUser.avatar}`).catch(() => {})
+      await c.env.DB.prepare('DELETE FROM avatars WHERE user_id = ? AND id = ?')
+        .bind(userId, oldUser.avatar).run().catch(() => {})
     }
   } else {
     const now = Date.now()

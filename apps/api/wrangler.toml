@@ -11,10 +11,6 @@ database_id = "b91768c2-1785-40f6-8021-6148153923e3"
 [vars]
 ENVIRONMENT = "production"
 
-[[r2_buckets]]
-binding = "AVATARS"
-bucket_name = "chat-budget-avatars"
-
 [durable_objects]
 bindings = [
   { name = "SYNC_DO", class_name = "SyncDO" }

@@ -12,19 +12,21 @@ avatars.get('/:userId/:avatarId', async (c) => {
     return c.json({ error: '无效路径' }, 400)
   }
 
-  const key = `avatars/${userId}/${avatarId}`
-  const object = await c.env.AVATARS.get(key)
+  const row = await c.env.DB.prepare(
+    'SELECT data, mime_type FROM avatars WHERE user_id = ? AND id = ?'
+  ).bind(userId, avatarId).first<{ data: ArrayBuffer; mime_type: string }>()
 
-  if (!object) {
+  if (!row) {
     return c.json({ error: '头像不存在' }, 404)
   }
 
-  const headers = new Headers()
-  object.writeHttpMetadata(headers)
-  headers.set('Cache-Control', 'public, max-age=86400, immutable')
-  headers.set('X-Content-Type-Options', 'nosniff')
-
-  return new Response(object.body, { headers })
+  return new Response(row.data, {
+    headers: {
+      'Content-Type': row.mime_type,
+      'Cache-Control': 'public, max-age=86400, immutable',
+      'X-Content-Type-Options': 'nosniff',
+    },
+  })
 })
 
 export default avatars
