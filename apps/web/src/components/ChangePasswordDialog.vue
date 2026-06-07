@@ -1,6 +1,6 @@
 <!-- apps/web/src/components/ChangePasswordDialog.vue -->
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { authApi } from '@/lib/api'
 import {
@@ -31,7 +31,12 @@ let timer: ReturnType<typeof setInterval> | undefined
 
 const canResend = computed(() => countdown.value === 0)
 
+onBeforeUnmount(() => {
+  if (timer) clearInterval(timer)
+})
+
 function startCountdown() {
+  if (timer) clearInterval(timer)
   countdown.value = 60
   codeSent.value = true
   timer = setInterval(() => {

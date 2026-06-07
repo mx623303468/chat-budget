@@ -1,6 +1,6 @@
 <!-- apps/web/src/pages/ForgotPassword.vue -->
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { authApi } from '@/lib/api'
 
@@ -21,7 +21,12 @@ let timer: ReturnType<typeof setInterval> | undefined
 
 const canResend = computed(() => countdown.value === 0)
 
+onBeforeUnmount(() => {
+  if (timer) clearInterval(timer)
+})
+
 function startCountdown() {
+  if (timer) clearInterval(timer)
   countdown.value = 60
   codeSent.value = true
   timer = setInterval(() => {
