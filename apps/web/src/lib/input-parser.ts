@@ -54,6 +54,6 @@ export function parse(raw: string): ParseResult {
 export function fenToYuan(fen: number): string {
   const abs = Math.abs(fen)
   const yuan = abs / 100
-  const formatted = yuan % 1 === 0 ? yuan.toFixed(0) : yuan.toFixed(2)
+  const formatted = yuan % 1 === 0 ? yuan.toFixed(0) : String(parseFloat(yuan.toFixed(2)))
   return fen < 0 ? `-${formatted}` : formatted
 }
