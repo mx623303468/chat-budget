@@ -1,28 +1,28 @@
 // apps/api/src/lib/email.ts
 
 type SendEmailParams = {
-  to: string
-  subject: string
-  html: string
-  apiKey: string
-}
+  to: string;
+  subject: string;
+  html: string;
+  apiKey: string;
+};
 
 export async function sendEmail({ to, subject, html, apiKey }: SendEmailParams): Promise<boolean> {
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${apiKey}`,
+      Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      from: '聊天记账 <noreply@your-domain.com>',
+      from: '聊天记账 <noreply@mail.chat-budget.online>',
       to: [to],
       subject,
       html,
     }),
-  })
+  });
 
-  return res.ok
+  return res.ok;
 }
 
 export function buildResetCodeHtml(code: string): string {
@@ -35,5 +35,5 @@ export function buildResetCodeHtml(code: string): string {
   <p style="font-size: 32px; font-weight: bold; letter-spacing: 4px; color: #333; margin: 16px 0;">${code}</p>
   <p style="color: #999; font-size: 12px;">验证码 5 分钟内有效。如非本人操作，请忽略此邮件。</p>
 </body>
-</html>`
+</html>`;
 }
