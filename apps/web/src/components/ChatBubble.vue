@@ -231,7 +231,7 @@ const trans = computed(() =>
     </div>
 
     <!-- 时间戳 -->
-    <div :class="isMine ? 'flex justify-end' : 'flex justify-start pl-10'">
+    <div :class="isMine ? 'flex justify-end pr-10' : 'flex justify-start pl-10'">
       <div class="text-[11px] text-muted-foreground text-right mt-0.5 pr-1">
         {{ timeStr }}
       </div>

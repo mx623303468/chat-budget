@@ -179,6 +179,18 @@ export function useVirtualList(
     const container = containerRef.value
     if (!container) return
 
+    // 记录视口顶部锚点 item 的旧 offset（用于测量后校正滚动位置）
+    const arr = virtualItems.value
+    const top = scrollTop.value
+    let lo = 0, hi = arr.length - 1
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1
+      if (arr[mid]!.offset + arr[mid]!.height <= top) lo = mid + 1
+      else hi = mid - 1
+    }
+    const anchorIdx = Math.min(lo, arr.length - 1)
+    const oldAnchorOffset = arr[anchorIdx]?.offset ?? 0
+
     const rendered = container.querySelectorAll('[data-virtual-index]')
     let changed = false
 
@@ -199,6 +211,16 @@ export function useVirtualList(
 
     if (changed) {
       _measureTrigger.value++
+
+      // Scroll anchoring：校正滚动位置，防止测量导致视口内容闪跳
+      const newArr = virtualItems.value
+      const newAnchorOffset = anchorIdx < newArr.length
+        ? newArr[anchorIdx]!.offset : 0
+      const delta = newAnchorOffset - oldAnchorOffset
+      if (delta !== 0) {
+        container.scrollTop += delta
+        scrollTop.value = container.scrollTop
+      }
     }
   }
 
