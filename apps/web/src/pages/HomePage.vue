@@ -3,7 +3,7 @@ import { ref, onMounted, defineAsyncComponent, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft } from 'lucide-vue-next'
 import BudgetHeader from '@/components/BudgetHeader.vue'
-import VirtualChatList, { type MemberMap } from '@/components/VirtualChatList.vue'
+import ChatList, { type MemberMap } from '@/components/ChatList.vue'
 import ChatInput from '@/components/ChatInput.vue'
 import EditDialog from '@/components/EditDialog.vue'
 import { useTransactionStore } from '@/stores/transaction'
@@ -136,7 +136,7 @@ async function onLoadMore() {
         </div>
 
         <BudgetHeader @navigate="navigateTo" />
-        <VirtualChatList
+        <ChatList
           :transactions="transactionStore.transactions"
           :has-more="transactionStore.hasMore"
           :loading="transactionStore.loading"

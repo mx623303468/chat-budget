@@ -7,8 +7,19 @@ import { ref, computed, watch, nextTick } from 'vue'
 import { DotLottieVue } from '@lottiefiles/dotlottie-vue'
 import type { Transaction } from '@/types'
 import ChatBubble from './ChatBubble.vue'
-import { useVirtualList, type GroupItem, type TransactionGroupItem } from '@/composables/useVirtualList'
 import { formatDateLabel } from '@/lib/date-utils'
+
+interface DateGroupItem { type: 'date'; date: string; label: string }
+interface TransactionGroupItem {
+  type: 'transaction'
+  data: Transaction
+  isMine: boolean
+  nickname?: string
+  avatar?: string | null
+  showNickname: boolean
+  showAvatar: boolean
+}
+type GroupItem = DateGroupItem | TransactionGroupItem
 
 const props = defineProps<{
   transactions: Transaction[]
@@ -26,7 +37,6 @@ const emit = defineEmits<{
 
 const containerRef = ref<HTMLElement | null>(null)
 
-// 按天分组
 const grouped = computed<GroupItem[]>(() => {
   const result: GroupItem[] = []
   let lastDate = ''
@@ -64,27 +74,12 @@ function itemKey(item: GroupItem): string {
   return item.type === 'date' ? `date-${item.date}` : item.data.id
 }
 
-const {
-  totalHeight,
-  visibleItems,
-  offsetY,
-  onScroll,
-  initViewport,
-} = useVirtualList(grouped, containerRef, itemKey)
-
-// 数据量少于阈值时直接全量渲染
-const SIMPLE_THRESHOLD = 30
-const useVirtual = computed(() => grouped.value.length > SIMPLE_THRESHOLD)
-
-// 加载更多防重入
+// --- 加载更多 ---
 let loadingMore = false
-let prevTotalHeight = 0
 let lastLoadTime = 0
 const LOAD_COOLDOWN = 800
 
 function handleScroll(): void {
-  onScroll()
-
   const el = containerRef.value
   if (!el) return
   if (!props.hasMore || props.loading || loadingMore) return
@@ -95,30 +90,27 @@ function handleScroll(): void {
   if (el.scrollTop < 50) {
     loadingMore = true
     lastLoadTime = now
-    prevTotalHeight = totalHeight.value
+    const prevHeight = el.scrollHeight
     emit('load-more')
+
+    // 加载完成后校正位置：保持视觉不跳动
+    const stop = watch(() => props.loading, (isLoading) => {
+      if (isLoading) return
+      stop()
+      nextTick(() => {
+        const el2 = containerRef.value
+        if (el2) {
+          el2.scrollTop = el2.scrollTop + (el2.scrollHeight - prevHeight)
+        }
+        loadingMore = false
+      })
+    })
   }
 }
 
-// 加载更多后校正 scrollTop（保持视觉位置不变）
-watch(totalHeight, async (newH) => {
-  if (prevTotalHeight > 0 && newH > prevTotalHeight) {
-    const delta = newH - prevTotalHeight
-    await nextTick()
-    const el = containerRef.value
-    if (el) {
-      el.scrollTop = el.scrollTop + delta
-    }
-    prevTotalHeight = 0
-    await nextTick()
-    loadingMore = false
-  }
-})
-
-// 追踪是否需要滚到底部
+// --- 自动滚到底部 ---
 let needsScrollToBottom = false
 
-// 自动滚到底部：watch transactions 增长时标记，等 totalHeight 更新后执行
 watch(
   () => props.transactions.length,
   (newLen, oldLen) => {
@@ -128,37 +120,34 @@ watch(
   },
 )
 
-function scrollToBottom(): void {
-  const el = containerRef.value
-  if (!el) return
-  const maxScroll = el.scrollHeight - el.clientHeight
-  // 仅当不在底部（容差 5px）时才设置，避免干扰 iOS 惯性滚动
-  if (maxScroll > 0 && el.scrollTop < maxScroll - 5) {
-    el.scrollTop = maxScroll
-  }
-}
-
-// totalHeight 变化时，如果标记了需要滚底，则执行
-watch(totalHeight, (newH, oldH) => {
-  if (needsScrollToBottom && newH !== oldH) {
+watch(
+  () => props.transactions.length,
+  () => {
+    if (!needsScrollToBottom) return
     needsScrollToBottom = false
     nextTick(() => {
       requestAnimationFrame(scrollToBottom)
     })
+  },
+)
+
+function scrollToBottom(): void {
+  const el = containerRef.value
+  if (!el) return
+  const max = el.scrollHeight - el.clientHeight
+  if (max > 0 && el.scrollTop < max - 5) {
+    el.scrollTop = max
   }
-})
+}
 
 // 初始加载滚到底部
-nextTick(() => {
-  initViewport()
-  requestAnimationFrame(scrollToBottom)
-})
+nextTick(() => requestAnimationFrame(scrollToBottom))
 </script>
 
 <template>
   <div
     ref="containerRef"
-    class="flex-1 overflow-y-auto overscroll-y-none px-4 py-2 overflow-anchor-auto"
+    class="flex-1 overflow-y-auto overscroll-y-none px-4 py-2"
     @scroll="handleScroll"
   >
     <!-- 空状态 -->
@@ -183,18 +172,18 @@ nextTick(() => {
       <span class="text-xs text-muted-foreground">加载中...</span>
     </div>
 
-    <!-- 简单模式：少量数据直接渲染 -->
-    <div v-if="!useVirtual && transactions.length > 0" class="flex flex-col justify-end min-h-full">
+    <!-- 列表 -->
+    <div v-if="transactions.length > 0" class="flex flex-col justify-end min-h-full">
       <template v-for="(item, idx) in grouped" :key="itemKey(item)">
         <div
           v-if="item.type === 'date'"
           class="flex items-center justify-center gap-2 py-2"
         >
-          <span class="text-xs text-muted-foreground whitespace-nowrap">{{ item.label }}</span>
+          <span class="text-xs text-muted-foreground whitespace-nowrap">{{ (item as DateGroupItem).label }}</span>
         </div>
         <ChatBubble
           v-else
-          :transaction="(item as TransactionGroupItem).data as any"
+          :transaction="(item as TransactionGroupItem).data"
           :is-mine="(item as TransactionGroupItem).isMine"
           :nickname="(item as TransactionGroupItem).nickname"
           :avatar="(item as TransactionGroupItem).avatar"
@@ -205,43 +194,6 @@ nextTick(() => {
           @edit="emit('edit', $event)"
         />
       </template>
-    </div>
-
-    <!-- 虚拟滚动模式 -->
-    <div
-      v-if="useVirtual"
-      class="relative"
-      :style="{ height: totalHeight + 'px' }"
-    >
-      <div
-        class="absolute left-0 right-0"
-        :style="{ transform: `translateY(${offsetY}px)` }"
-      >
-        <div
-          v-for="vi in visibleItems"
-          :key="itemKey(vi.item)"
-          :data-virtual-index="vi.index"
-        >
-          <div
-            v-if="vi.item.type === 'date'"
-            class="flex items-center justify-center gap-2 py-2"
-          >
-            <span class="text-xs text-muted-foreground whitespace-nowrap">{{ (vi.item as { type: 'date'; label: string }).label }}</span>
-          </div>
-          <ChatBubble
-            v-else
-            :animate="false"
-            :transaction="(vi.item as TransactionGroupItem).data as any"
-            :is-mine="(vi.item as TransactionGroupItem).isMine"
-            :nickname="(vi.item as TransactionGroupItem).nickname"
-            :avatar="(vi.item as TransactionGroupItem).avatar"
-            :show-nickname="(vi.item as TransactionGroupItem).showNickname"
-            :show-avatar="(vi.item as TransactionGroupItem).showAvatar"
-            @delete="emit('delete', $event)"
-            @edit="emit('edit', $event)"
-          />
-        </div>
-      </div>
     </div>
   </div>
 </template>
