@@ -128,17 +128,22 @@ watch(
   },
 )
 
+function scrollToBottom(): void {
+  const el = containerRef.value
+  if (!el) return
+  const maxScroll = el.scrollHeight - el.clientHeight
+  // 仅当不在底部（容差 5px）时才设置，避免干扰 iOS 惯性滚动
+  if (maxScroll > 0 && el.scrollTop < maxScroll - 5) {
+    el.scrollTop = maxScroll
+  }
+}
+
 // totalHeight 变化时，如果标记了需要滚底，则执行
 watch(totalHeight, (newH, oldH) => {
   if (needsScrollToBottom && newH !== oldH) {
     needsScrollToBottom = false
     nextTick(() => {
-      requestAnimationFrame(() => {
-        const el = containerRef.value
-        if (el) {
-          el.scrollTop = el.scrollHeight - el.clientHeight
-        }
-      })
+      requestAnimationFrame(scrollToBottom)
     })
   }
 })
@@ -146,19 +151,14 @@ watch(totalHeight, (newH, oldH) => {
 // 初始加载滚到底部
 nextTick(() => {
   initViewport()
-  requestAnimationFrame(() => {
-    const el = containerRef.value
-    if (el) {
-      el.scrollTop = el.scrollHeight - el.clientHeight
-    }
-  })
+  requestAnimationFrame(scrollToBottom)
 })
 </script>
 
 <template>
   <div
     ref="containerRef"
-    class="flex-1 overflow-y-auto overscroll-y-contain px-4 py-2 overflow-anchor-auto"
+    class="flex-1 overflow-y-auto overscroll-y-none px-4 py-2 overflow-anchor-auto"
     @scroll="handleScroll"
   >
     <!-- 空状态 -->
