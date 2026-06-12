@@ -23,14 +23,38 @@ export type TransactionGroupItem = {
 export type GroupItem = DateGroupItem | TransactionGroupItem
 
 const BUFFER = 5
-const EST_DATE_H = 30
-const EST_BUBBLE_H = 80
-const EST_BUBBLE_AVATAR_H = 88
+
+// 每个分类的动态高度估计：首次用兜底值，测量后自动更新为实际平均值
+const _estDate = ref(30)
+const _estBubble = ref(80)
+const _estBubbleAvatar = ref(80)
+
+// 分类累加器（只累加首次测量，避免重复计数）
+let _sDate = 0, _nDate = 0
+let _sBubble = 0, _nBubble = 0
+let _sBubbleAvatar = 0, _nBubbleAvatar = 0
+const _measured = new Set<string | number>()
+
+function updateEstimate(key: string | number, item: GroupItem, height: number): void {
+  if (_measured.has(key)) return
+  _measured.add(key)
+
+  if (item.type === 'date') {
+    _sDate += height; _nDate++
+    _estDate.value = _sDate / _nDate
+  } else if (item.showAvatar && item.showNickname) {
+    _sBubbleAvatar += height; _nBubbleAvatar++
+    _estBubbleAvatar.value = _sBubbleAvatar / _nBubbleAvatar
+  } else {
+    _sBubble += height; _nBubble++
+    _estBubble.value = _sBubble / _nBubble
+  }
+}
 
 function estimateHeight(item: GroupItem): number {
-  if (item.type === 'date') return EST_DATE_H
-  if (item.showAvatar && item.showNickname) return EST_BUBBLE_AVATAR_H
-  return EST_BUBBLE_H
+  if (item.type === 'date') return _estDate.value
+  if (item.showAvatar && item.showNickname) return _estBubbleAvatar.value
+  return _estBubble.value
 }
 
 export function useVirtualList(
@@ -165,6 +189,7 @@ export function useVirtualList(
       if (!item) return
       const key = keyFn(item)
       const actual = (el as HTMLElement).getBoundingClientRect().height
+      updateEstimate(key, item, actual)
       const cached = heightCache.get(key)
       if (cached !== actual) {
         heightCache.set(key, actual)
