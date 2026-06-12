@@ -144,7 +144,7 @@ const trans = computed(() =>
 </script>
 
 <template>
-  <div class="mb-1" :class="{ 'animate-bubble-in': animate !== false }">
+  <div class="pb-1" :class="{ 'animate-bubble-in': animate !== false }">
     <div class="flex items-end gap-2" :class="isMine ? 'justify-end' : 'justify-start'">
       <!-- 左侧头像+昵称（他人） -->
       <div v-if="!isMine && showAvatar" class="shrink-0 pb-5 flex flex-col items-center gap-0.5">

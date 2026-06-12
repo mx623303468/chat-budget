@@ -23,11 +23,14 @@ export type TransactionGroupItem = {
 export type GroupItem = DateGroupItem | TransactionGroupItem
 
 const BUFFER = 5
-const EST_DATE_H = 32
+const EST_DATE_H = 30
 const EST_BUBBLE_H = 80
+const EST_BUBBLE_AVATAR_H = 88
 
 function estimateHeight(item: GroupItem): number {
-  return item.type === 'date' ? EST_DATE_H : EST_BUBBLE_H
+  if (item.type === 'date') return EST_DATE_H
+  if (item.showAvatar && item.showNickname) return EST_BUBBLE_AVATAR_H
+  return EST_BUBBLE_H
 }
 
 export function useVirtualList(

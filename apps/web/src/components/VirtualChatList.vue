@@ -188,7 +188,7 @@ nextTick(() => {
       <template v-for="(item, idx) in grouped" :key="itemKey(item)">
         <div
           v-if="item.type === 'date'"
-          class="flex items-center justify-center gap-2 my-2"
+          class="flex items-center justify-center gap-2 py-2"
         >
           <span class="text-xs text-muted-foreground whitespace-nowrap">{{ item.label }}</span>
         </div>
@@ -224,7 +224,7 @@ nextTick(() => {
         >
           <div
             v-if="vi.item.type === 'date'"
-            class="flex items-center justify-center gap-2 my-2"
+            class="flex items-center justify-center gap-2 py-2"
           >
             <span class="text-xs text-muted-foreground whitespace-nowrap">{{ (vi.item as { type: 'date'; label: string }).label }}</span>
           </div>
